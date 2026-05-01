@@ -1,0 +1,3535 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>roomtis</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2eb;
+  --ink: #1a1814;
+  --muted: #8a8578;
+  --border: #d8d3c8;
+  --free-bg: #eaf4e4;
+  --free-border: #b8dca8;
+  --free: #2d5a1b;
+  --accent: #e8401a;
+  --active-bg: #fdf0eb;
+  --active-text: #1a1814;
+  --active-border: #e8401a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── TABS ── */
+.tab-btn {
+  color: #a09a90;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 5px;
+  transition: color 0.15s, background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.tab-btn:hover { color: var(--bg); background: rgba(255,255,255,0.1); }
+.tab-btn.active { color: var(--accent); }
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--ink);
+  color: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.03em; }
+.logo span { color: var(--accent); }
+#liveClock { font-family: 'Syne Mono', monospace; font-size: 0.95rem; color: #a09a90; }
+
+/* ── FREE ROOMS PANEL ── */
+.free-panel {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 2px solid var(--ink);
+  background: white;
+}
+.free-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.free-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
+.free-pill {
+  background: var(--accent);
+  color: white;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 2rem;
+}
+.rooms-wrap { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.room-chip {
+  background: var(--free-bg);
+  border: 1.5px solid var(--free-border);
+  color: var(--free);
+  border-radius: 5px;
+  padding: 0.3rem 0.65rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  animation: popIn 0.2s ease both;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  transition: transform 0.1s;
+}
+.room-chip:active { transform: scale(0.93); }
+.room-chip.fav {
+  background: #fffbea;
+  border-color: #f0c040;
+  color: #7a5c00;
+}
+.room-chip.fav::before { content: '★ '; color: #f0c040; }
+.room-chip.fav-belegt {
+  background: #fafafa;
+  border-color: #ddd;
+  color: var(--muted);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.room-chip.fav-belegt::before { content: '★ '; color: #ccc; }
+.fav-section-label {
+  width: 100%;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+.fav-editor-chip {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.8rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fav-editor-chip:active { transform: scale(0.93); }
+.fav-editor-chip.selected {
+  background: #fffbea;
+  border-color: #f0c040;
+  color: #7a5c00;
+}
+.fav-editor-chip.selected::before { content: '★ '; color: #f0c040; }
+.dev-quick-btn {
+  background: #2a2824;
+  border: 1.5px solid #3a3834;
+  border-radius: 5px;
+  padding: 0.3rem 0.65rem;
+  color: #d0ccc4;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dev-quick-btn:hover { background: #3a3834; border-color: #a09a90; color: white; }
+.dev-quick-btn:active { transform: scale(0.93); }
+@keyframes popIn { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+.loading-bar { display:flex; align-items:center; gap:0.6rem; color:var(--muted); font-size:0.82rem; padding:0.25rem 0; }
+.dot-pulse { display:flex; gap:3px; }
+.dot-pulse span { width:5px; height:5px; background:var(--muted); border-radius:50%; animation:pulse 1.2s ease-in-out infinite; }
+.dot-pulse span:nth-child(2){animation-delay:.2s}
+.dot-pulse span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.no-class { color:var(--muted); font-size:0.85rem; font-style:italic; }
+
+/* ── TIMETABLE ── */
+.timetable-wrap { padding: 1rem 1.5rem 2rem; }
+
+.day-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.day-label { font-size: 0.85rem; font-weight: 700; }
+.nav-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  width: 26px; height: 26px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.nav-btn:hover { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.nav-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.nav-btn:disabled:hover { background:none; color:var(--ink); border-color:var(--border); }
+
+/* Day grid: 2 columns (label + cell), blocks grouped */
+.day-grid { display: flex; flex-direction: column; gap: 4px; }
+
+.block-group { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
+
+.block-divider {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+
+.block-name {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0.4rem 0 0;
+  text-align: right;
+  border-right: 2px solid var(--border);
+}
+
+.block-line { height: 1px; background: var(--border); }
+
+.day-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 3px;
+}
+
+.row-label {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: right;
+  padding-right: 0.5rem;
+  border-right: 2px solid var(--border);
+  line-height: 1.5;
+}
+.row-label strong { font-size: 0.65rem; color: var(--ink); font-family: 'Syne', sans-serif; font-weight: 700; }
+
+.day-cell {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  height: 52px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-sizing: border-box;
+}
+.day-cell:hover { border-color: var(--ink); background: #f0ece4; }
+.day-cell.is-active { background: var(--active-bg); border-color: var(--active-border); border-width: 2.5px; }
+.day-cell.is-current { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.day-cell.is-past { opacity: 0.35; pointer-events: none; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(var(--slide-dir, 12px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.day-grid { transition: opacity 0.08s ease; }
+.day-grid.animating { animation: none; }
+.day-grid.animating > * {
+  opacity: 0;
+  animation: fadeSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.day-grid.animating > *:nth-child(1)  { animation-delay: 0.00s; }
+.day-grid.animating > *:nth-child(2)  { animation-delay: 0.03s; }
+.day-grid.animating > *:nth-child(3)  { animation-delay: 0.06s; }
+.day-grid.animating > *:nth-child(4)  { animation-delay: 0.09s; }
+.day-grid.animating > *:nth-child(5)  { animation-delay: 0.12s; }
+.day-grid.animating > *:nth-child(6)  { animation-delay: 0.15s; }
+.day-grid.animating > *:nth-child(7)  { animation-delay: 0.18s; }
+.day-grid.animating > *:nth-child(8)  { animation-delay: 0.21s; }
+.day-grid.animating > *:nth-child(9)  { animation-delay: 0.24s; }
+.day-grid.animating > *:nth-child(10) { animation-delay: 0.27s; }
+.day-grid.animating > *:nth-child(11) { animation-delay: 0.30s; }
+.day-grid.animating > *:nth-child(12) { animation-delay: 0.33s; }
+
+.klassen-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.jahrgang-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.jahrgang-dropdown {
+  width: 100%;
+  margin: 0.25rem 0 0.35rem 0;
+  padding: 0.5rem;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+}
+
+.fach-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.fach-chip {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fach-chip:hover { border-color: var(--ink); }
+.fach-chip.selected { background: var(--free-bg); border-color: var(--free-border); color: var(--free); }
+
+.fach-section-label {
+  width: 100%;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.save-btn {
+  margin-top: 1rem;
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  border-radius: 5px;
+  padding: 0.55rem 1.25rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.save-btn:hover { opacity: 0.8; }
+
+.klasse-chip {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  padding: 0.35rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.klasse-chip:hover { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.klasse-chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.pause-block { margin: 2px 0; }
+.pause-block .row-label { color: var(--muted); border-right: 2px dashed var(--border); }
+.pause-block .day-cell {
+  background: #e8e4dc;
+  border: 1.5px dashed var(--border);
+}
+.pause-block .day-cell:hover { background: #ddd9d0; border-color: var(--ink); }
+.pause-block .day-cell.is-active { background: var(--active-bg); border-color: var(--active-border); border-width: 2.5px; }
+.pause-block .day-cell.is-current { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.block3-row .day-cell { background: white; border-color: var(--border); }
+.block3-row .day-cell:hover { background: #f0ece4; }
+
+/* ── KALENDER ── */
+.cal-wrap { padding: 1rem 1.5rem 2rem; }
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.cal-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cal-month-label { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.cal-weekday {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 0.3rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cal-day {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  min-height: 52px;
+  padding: 0.2rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.cal-day:hover { border-color: var(--ink); background: #f8f6f2; }
+.cal-day.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.cal-day.other-month { opacity: 0.3; }
+.cal-day-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 1px;
+}
+.cal-dot {
+  display: block;
+  width: 100%;
+  font-size: 0.48rem;
+  font-weight: 700;
+  padding: 1px 2px;
+  border-radius: 2px;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.cal-entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.cal-entry-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  position: relative;
+  transition: all 0.15s;
+}
+.cal-entry-card:hover { border-color: var(--ink); }
+.cal-entry-title { font-weight: 800; font-size: 0.9rem; }
+.cal-entry-desc { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+.cal-entry-meta { font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--muted); margin-top: 0.35rem; }
+.cal-entry-badge {
+  display: inline-block;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cal-entry-delete {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.15rem;
+  transition: color 0.15s;
+}
+.cal-entry-delete:hover { color: #c04040; }
+.cal-add-btn {
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  border-radius: 5px;
+  padding: 0.45rem 1rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.cal-add-btn:hover { opacity: 0.8; }
+.cal-tab-row {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.cal-tab {
+  padding: 0.35rem 0.75rem;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: white;
+  transition: all 0.15s;
+}
+.cal-tab:hover { border-color: var(--ink); }
+.cal-tab.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">room<span>tis</span></div>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <!-- Drei-Punkte Menü -->
+    <div style="position:relative">
+      <div class="tab-btn" id="menuBtn" onclick="toggleMenu()" title="Menü" style="font-size:1.3rem;letter-spacing:0.05em;padding:0 4px">···</div>
+      <div id="dropdownMenu" style="
+        display:none;
+        position:absolute;
+        right:0;top:calc(100% + 8px);
+        background:white;
+        border:1.5px solid var(--border);
+        border-radius:8px;
+        box-shadow:0 4px 16px rgba(0,0,0,0.1);
+        min-width:180px;
+        z-index:100;
+        overflow:hidden;
+      ">
+        <div onclick="switchTab('rooms');toggleMenu()" id="menuRooms" style="
+          display:flex;align-items:center;gap:0.75rem;
+          padding:0.65rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:700;
+          color:#1a1814;border-bottom:1px solid var(--border);
+        " onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Freie Räume
+        </div>
+        <div onclick="switchTab('plan');toggleMenu()" id="menuPlan" style="
+          display:flex;align-items:center;gap:0.75rem;
+          padding:0.65rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:700;
+          color:#1a1814;border-bottom:1px solid var(--border);
+        " onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+          Mein Stundenplan
+        </div>
+        <div onclick="switchTab('kalender');toggleMenu()" id="menuKalender" style="
+          display:flex;align-items:center;gap:0.75rem;
+          padding:0.65rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:700;
+          color:#1a1814;border-bottom:1px solid var(--border);
+        " onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1"/></svg>
+          Kalender
+        </div>
+        <div onclick="openFavEditor();toggleMenu()" style="
+          display:flex;align-items:center;gap:0.75rem;
+          padding:0.65rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:700;
+          color:#1a1814;border-bottom:1px solid var(--border);
+        " onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Favoriten verwalten
+        </div>
+        <div onclick="switchTab('settings');toggleMenu()" style="
+          display:flex;align-items:center;gap:0.75rem;
+          padding:0.65rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:700;
+          color:var(--muted);
+        " onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Einstellungen
+        </div>
+      </div>
+    </div>
+    <div id="liveClock">--:--</div>
+  </div>
+</div>
+
+<!-- FAVORITEN OVERLAY -->
+<div id="favOverlay" style="
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(26,24,20,0.5);
+  backdrop-filter:blur(2px);
+  opacity:0;transition:opacity 0.25s ease;
+" onclick="closeFavEditor()"></div>
+<div id="favPanel" style="
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:201;
+  background:white;border-radius:16px 16px 0 0;
+  padding:1.25rem 1.25rem 2rem;
+  max-height:80vh;overflow-y:auto;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.15);
+  transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);
+">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.02em">Favoriten verwalten</div>
+    <div onclick="closeFavEditor()" style="cursor:pointer;color:var(--muted);font-size:1.2rem;line-height:1;padding:0.25rem">✕</div>
+  </div>
+  <p style="font-size:0.75rem;color:var(--muted);margin-bottom:1rem;font-family:'Syne Mono',monospace">Tippe auf einen Raum um ihn zu favorisieren.</p>
+  <div id="favEditorGrid" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+</div>
+
+<!-- OLD DEV+LN PANELS REMOVED - now inside Admin Overlay -->
+
+<!-- ADMIN OVERLAY (Developer + L-Nummern combined) -->
+<div id="adminOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(26,24,20,0.5);backdrop-filter:blur(2px);opacity:0;transition:opacity 0.25s ease;" onclick="closeAdminPanel()"></div>
+<div id="adminPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--ink);color:var(--bg);border-radius:16px 16px 0 0;padding:1.25rem 1.25rem 2rem;max-height:85vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.3);transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div style="font-size:1rem;font-weight:800;letter-spacing:-0.02em">Admin-Bereich</div>
+    </div>
+    <div onclick="closeAdminPanel()" style="cursor:pointer;color:#a09a90;font-size:1.2rem;line-height:1;padding:0.25rem">✕</div>
+  </div>
+
+  <!-- Admin Tabs -->
+  <div style="display:flex;gap:0.4rem;margin-bottom:1.25rem">
+    <div class="dev-quick-btn" id="adminTabDev" onclick="setAdminTab('dev')" style="background:#3a3834;border-color:#a09a90;color:white">Developer</div>
+    <div class="dev-quick-btn" id="adminTabLN" onclick="setAdminTab('ln')">L-Nummern</div>
+  </div>
+
+  <!-- Developer Section -->
+  <div id="adminDevSection">
+    <!-- Zeit Override -->
+    <div style="margin-bottom:1.25rem">
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:#a09a90;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.6rem">Zeit überschreiben</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+        <input type="time" id="devTimeInput" style="background:#2a2824;border:1.5px solid #3a3834;border-radius:6px;color:var(--bg);font-family:'Syne Mono',monospace;font-size:0.95rem;padding:0.4rem 0.65rem;outline:none;width:130px;" oninput="applyDevTime()">
+        <button onclick="resetDevTime()" style="background:none;border:1.5px solid #3a3834;border-radius:6px;padding:0.4rem 0.75rem;color:#a09a90;font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">Reset</button>
+        <div id="devTimeStatus" style="font-family:'Syne Mono',monospace;font-size:0.72rem;color:#a09a90;"></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.75rem">
+        <div style="width:100%;font-family:'Syne Mono',monospace;font-size:0.58rem;color:#a09a90;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.2rem">Schnellwahl</div>
+        <button onclick="setDevTimeQuick(800)"  class="dev-quick-btn">Vor Block 1</button>
+        <button onclick="setDevTimeQuick(745)"  class="dev-quick-btn">Block 1</button>
+        <button onclick="setDevTimeQuick(935)"  class="dev-quick-btn">Block 2</button>
+        <button onclick="setDevTimeQuick(1125)" class="dev-quick-btn">Block 3</button>
+        <button onclick="setDevTimeQuick(1255)" class="dev-quick-btn">Pause</button>
+        <button onclick="setDevTimeQuick(1330)" class="dev-quick-btn">Block 4</button>
+        <button onclick="setDevTimeQuick(1530)" class="dev-quick-btn">Block 5</button>
+        <button onclick="setDevTimeQuick(1800)" class="dev-quick-btn">Nach Unterricht</button>
+      </div>
+    </div>
+    <!-- Datum Override -->
+    <div style="margin-bottom:1.25rem">
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:#a09a90;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.6rem">Datum überschreiben</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+        <input type="date" id="devDateInput" style="background:#2a2824;border:1.5px solid #3a3834;border-radius:6px;color:var(--bg);font-family:'Syne Mono',monospace;font-size:0.9rem;padding:0.4rem 0.65rem;outline:none;" oninput="applyDevDate()">
+        <button onclick="resetDevDate()" style="background:none;border:1.5px solid #3a3834;border-radius:6px;padding:0.4rem 0.75rem;color:#a09a90;font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">Reset</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.75rem">
+        <div style="width:100%;font-family:'Syne Mono',monospace;font-size:0.58rem;color:#a09a90;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.2rem">Wochentag</div>
+        <button onclick="setDevDay(1)" class="dev-quick-btn">Mo</button>
+        <button onclick="setDevDay(2)" class="dev-quick-btn">Di</button>
+        <button onclick="setDevDay(3)" class="dev-quick-btn">Mi</button>
+        <button onclick="setDevDay(4)" class="dev-quick-btn">Do</button>
+        <button onclick="setDevDay(5)" class="dev-quick-btn">Fr</button>
+        <button onclick="setDevDay(6)" class="dev-quick-btn">Sa</button>
+        <button onclick="setDevDay(0)" class="dev-quick-btn">So</button>
+      </div>
+    </div>
+    <div id="devActiveIndicator" style="display:none;background:#e8401a;border-radius:6px;padding:0.4rem 0.75rem;font-family:'Syne Mono',monospace;font-size:0.72rem;font-weight:700;text-align:center">⚠ Dev-Modus aktiv</div>
+  </div>
+
+  <!-- L-Nummern Section -->
+  <div id="adminLNSection" style="display:none">
+    <p style="font-size:0.72rem;color:#a09a90;margin-bottom:0.75rem;font-family:'Syne Mono',monospace;line-height:1.5">
+      Weise jeder Stunde ihre L-Nummer zu (z.B. L11). Wird für Kalender-Platzhalter wie {L11} verwendet.
+    </p>
+    <div style="display:flex;gap:0.4rem;margin-bottom:1rem">
+      <div class="dev-quick-btn" id="lnTab12" onclick="setLNJahrgang('12')" style="background:#3a3834;border-color:#a09a90;color:white">Jg. 12</div>
+      <div class="dev-quick-btn" id="lnTab13" onclick="setLNJahrgang('13')">Jg. 13</div>
+    </div>
+    <div id="lnGrid" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+    <div style="margin-top:1rem">
+      <button onclick="saveLNummern()" style="background:var(--accent);color:white;border:none;border-radius:6px;padding:0.45rem 1rem;font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;width:100%;" id="lnSaveBtn">L-Nummern speichern</button>
+    </div>
+    <div id="lnError" style="display:none;color:#ff6b6b;font-size:0.75rem;font-weight:700;margin-top:0.5rem"></div>
+  </div>
+</div>
+
+<!-- TAB: EINSTELLUNGEN -->
+<div id="viewSettings" style="display:none">
+  <div class="free-panel">
+    <div class="free-header">
+      <div class="free-title">Einstellungen</div>
+    </div>
+  </div>
+  <div style="padding:1rem 1.5rem 2rem">
+
+    <!-- Klasse -->
+    <div style="margin-bottom:1.5rem">
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.5rem">Meine Klasse</div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div id="settingsKlasseLabel" style="font-weight:800;font-size:0.9rem"></div>
+        <button onclick="switchTab('plan')" style="background:none;border:1.5px solid var(--border);border-radius:5px;padding:0.3rem 0.65rem;font-family:'Syne',sans-serif;font-size:0.75rem;cursor:pointer;color:var(--muted)">Im Stundenplan ändern</button>
+      </div>
+    </div>
+
+    <!-- Favoriten -->
+    <div style="margin-bottom:1.5rem">
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.5rem">Favorisierte Räume</div>
+      <button onclick="openFavEditor()" style="background:none;border:1.5px solid var(--border);border-radius:5px;padding:0.3rem 0.65rem;font-family:'Syne',sans-serif;font-size:0.75rem;cursor:pointer;color:var(--muted)">Favoriten verwalten</button>
+    </div>
+
+    <!-- Divider -->
+    <div style="height:1px;background:var(--border);margin:1.5rem 0"></div>
+
+    <!-- Admin Modus -->
+    <div>
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.5rem">Admin-Modus</div>
+      <div id="adminToggleArea">
+        <div id="adminOff" style="display:flex;flex-direction:column;gap:0.5rem">
+          <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.25rem">Schalte den Admin-Modus frei um auf Developer-Tools, L-Nummern und globale Kalendereinträge zuzugreifen.</p>
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            <input type="password" id="adminPwInput" placeholder="Admin-Passwort" style="flex:1;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:6px;font-family:'Syne',sans-serif;font-size:0.82rem;outline:none;">
+            <button onclick="activateAdmin()" style="background:var(--ink);color:var(--bg);border:none;border-radius:6px;padding:0.45rem 0.85rem;font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap" id="adminActivateBtn">Aktivieren</button>
+          </div>
+          <div id="adminError" style="display:none;color:#c04040;font-size:0.75rem;font-weight:700"></div>
+        </div>
+        <div id="adminOn" style="display:none">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="background:var(--free-bg);border:1.5px solid var(--free-border);color:var(--free);font-weight:700;font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:2rem">✓ Admin aktiv</div>
+            <button onclick="deactivateAdmin()" style="background:none;border:1.5px solid var(--border);border-radius:5px;padding:0.25rem 0.6rem;font-family:'Syne',sans-serif;font-size:0.72rem;cursor:pointer;color:var(--muted)">Deaktivieren</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem">
+            <button onclick="openAdminPanel('dev')" style="
+              display:flex;align-items:center;gap:0.75rem;width:100%;text-align:left;
+              background:white;border:1.5px solid var(--border);border-radius:8px;
+              padding:0.65rem 1rem;cursor:pointer;font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;
+              transition:all 0.15s;
+            " onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--border)'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Developer-Tools
+            </button>
+            <button onclick="openAdminPanel('ln')" style="
+              display:flex;align-items:center;gap:0.75rem;width:100%;text-align:left;
+              background:white;border:1.5px solid var(--border);border-radius:8px;
+              padding:0.65rem 1rem;cursor:pointer;font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;
+              transition:all 0.15s;
+            " onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--border)'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="3"/></svg>
+              L-Nummern zuordnen
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: EIGENER STUNDENPLAN -->
+<div id="viewPlan" style="display:none">
+
+  <!-- Header panel (same as free-panel) -->
+  <div class="free-panel">
+    <div class="free-header">
+      <div class="free-title" id="planTitle">Stundenplan</div>
+      <div class="free-pill" id="planPill"></div>
+    </div>
+    <div id="planRoomsContainer">
+      <!-- Klasse auswählen -->
+      <div id="klasseWahl">
+        <div style="font-family:'Syne Mono',monospace;font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.75rem">Klasse auswählen</div>
+        <div class="jahrgang-row" id="klassenGrid"></div>
+        <div id="dd-container"></div>
+      </div>
+      <!-- Gewählte Klasse -->
+      <div id="gewaehlteKlasse" style="display:none">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+          <div id="klasseLabel" style="background:var(--ink);color:var(--bg);font-weight:800;font-size:0.9rem;padding:0.2rem 0.65rem;border-radius:4px"></div>
+          <button onclick="klasseZuruecksetzen()" style="background:none;border:1.5px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-family:'Syne',sans-serif;font-size:0.72rem;cursor:pointer;color:var(--muted)">ändern</button>
+          <button onclick="openAGPanel()" id="agBtn" style="background:none;border:1.5px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-family:'Syne',sans-serif;font-size:0.72rem;cursor:pointer;color:var(--muted)">AGs</button>
+          <button onclick="faecherSpeichernOberstufe(event)" id="saveBtn" style="display:none;background:var(--ink);color:var(--bg);border:none;border-radius:4px;padding:0.2rem 0.65rem;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer">Speichern</button>
+          <button onclick="togglePlanModus()" id="modusBtn" style="display:none;background:none;border:1.5px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-family:'Syne',sans-serif;font-size:0.72rem;cursor:pointer;color:var(--muted)">Mein Plan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timetable (same structure as main timetable) -->
+  <div class="timetable-wrap" id="planTimetable">
+    <div class="day-nav">
+      <button class="nav-btn" id="planPrevBtn" onclick="shiftPlanDay(-1)">←</button>
+      <div class="day-label" id="planDayLabel"></div>
+      <button class="nav-btn" id="planNextBtn" onclick="shiftPlanDay(1)">→</button>
+    </div>
+    <div class="day-grid-outer"><div class="day-grid" id="planDayGrid"></div></div>
+  </div>
+
+</div>
+
+<!-- AG AUSWAHL PANEL -->
+<div id="agOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(26,24,20,0.5);backdrop-filter:blur(2px);opacity:0;transition:opacity 0.25s ease;" onclick="closeAGPanel()"></div>
+<div id="agPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:201;background:white;border-radius:16px 16px 0 0;padding:1.25rem 1.25rem 2rem;max-height:75vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.15);transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.02em">AGs auswählen</div>
+    <div onclick="closeAGPanel()" style="cursor:pointer;color:var(--muted);font-size:1.2rem;line-height:1;padding:0.25rem">✕</div>
+  </div>
+  <p style="font-size:0.72rem;color:var(--muted);margin-bottom:0.75rem;font-family:'Syne Mono',monospace;line-height:1.5">
+    Wähle deine AGs aus. Sie erscheinen im Stundenplan im Räume finden Tab.
+  </p>
+  <div id="agListLoading" style="font-size:0.78rem;color:var(--muted)">Laden…</div>
+  <div id="agList" style="display:flex;flex-wrap:wrap;gap:0.4rem"></div>
+</div>
+
+<!-- TAB: KALENDER -->
+<div id="viewKalender" style="display:none">
+  <div class="free-panel">
+    <div class="free-header">
+      <div class="free-title">Kalender</div>
+    </div>
+    <div class="cal-tab-row">
+      <div class="cal-tab active" id="calTabAlle" onclick="setCalFilter('alle')">Alle</div>
+      <div class="cal-tab" id="calTabSchule" onclick="setCalFilter('schule')">Schule</div>
+      <div class="cal-tab" id="calTabMeine" onclick="setCalFilter('meine')">Meine</div>
+    </div>
+  </div>
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <div class="cal-month-nav">
+        <button class="nav-btn" onclick="shiftCalMonth(-1)">←</button>
+        <div class="cal-month-label" id="calMonthLabel"></div>
+        <button class="nav-btn" onclick="shiftCalMonth(1)">→</button>
+      </div>
+      <button class="cal-add-btn" onclick="openCalModal()">+ Eintrag</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div id="calDayDetail" style="display:none;margin-top:1.25rem">
+      <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="font-size:0.95rem;font-weight:800" id="calDayDetailLabel"></div>
+        <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted)" id="calDayDetailDate"></div>
+      </div>
+      <div class="cal-entries-list" id="calDayEntries"></div>
+    </div>
+  </div>
+</div>
+
+<!-- KALENDER MODAL -->
+<div id="calModalOverlay" style="
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(26,24,20,0.5);
+  backdrop-filter:blur(2px);
+  opacity:0;transition:opacity 0.25s ease;
+" onclick="closeCalModal()"></div>
+<div id="calModalPanel" style="
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:201;
+  background:white;border-radius:16px 16px 0 0;
+  padding:1.25rem 1.25rem 2rem;
+  max-height:85vh;overflow-y:auto;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.15);
+  transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);
+">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.02em" id="calModalTitle">Eintrag hinzufügen</div>
+    <div onclick="closeCalModal()" style="cursor:pointer;color:var(--muted);font-size:1.2rem;line-height:1;padding:0.25rem">✕</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:0.85rem">
+    <!-- Typ -->
+    <div>
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Typ</div>
+      <div style="display:flex;gap:0.4rem">
+        <div class="cal-tab active" id="calTypePersonal" onclick="setCalType('personal')">Persönlich</div>
+        <div class="cal-tab" id="calTypeGlobal" onclick="setCalType('global')">Für alle (Admin)</div>
+      </div>
+    </div>
+
+    <!-- Admin PW (nur bei global) -->
+    <div id="calAdminPwRow" style="display:none">
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Admin-Passwort</div>
+      <input type="password" id="calAdminPw" placeholder="Passwort eingeben" style="
+        width:100%;padding:0.5rem 0.65rem;border:1.5px solid var(--border);border-radius:6px;
+        font-family:'Syne',sans-serif;font-size:0.85rem;outline:none;
+        transition:border-color 0.15s;
+      " onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+
+    <!-- Datum -->
+    <div>
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Datum</div>
+      <input type="date" id="calDate" style="
+        width:100%;padding:0.5rem 0.65rem;border:1.5px solid var(--border);border-radius:6px;
+        font-family:'Syne Mono',monospace;font-size:0.85rem;outline:none;
+        transition:border-color 0.15s;
+      " onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+
+    <!-- Ganztägig Toggle -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Ganztägig</div>
+        <label style="position:relative;display:inline-block;width:42px;height:24px;cursor:pointer">
+          <input type="checkbox" id="calAllDay" checked onchange="toggleCalAllDay()" style="opacity:0;width:0;height:0">
+          <span id="calAllDayTrack" style="
+            position:absolute;inset:0;background:var(--free);border-radius:12px;transition:background 0.25s;
+          "></span>
+          <span id="calAllDayKnob" style="
+            position:absolute;top:2px;left:20px;width:20px;height:20px;background:white;border-radius:50%;
+            transition:left 0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);
+          "></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Block Auswahl (nur wenn nicht ganztägig) -->
+    <div id="calBlockRow" style="display:none">
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Block</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem" id="calBlockPicker">
+        <div class="cal-tab active" data-block="1" onclick="setCalBlock('1')">Block 1</div>
+        <div class="cal-tab" data-block="2" onclick="setCalBlock('2')">Block 2</div>
+        <div class="cal-tab" data-block="3.1" onclick="setCalBlock('3.1')">Block 3.1</div>
+        <div class="cal-tab" data-block="3.2" onclick="setCalBlock('3.2')">Block 3.2</div>
+        <div class="cal-tab" data-block="4" onclick="setCalBlock('4')">Block 4</div>
+        <div class="cal-tab" data-block="5" onclick="setCalBlock('5')">Block 5</div>
+      </div>
+    </div>
+
+    <!-- Titel -->
+    <div>
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Titel</div>
+      <input type="text" id="calTitle" placeholder="z.B. Klausur Mathe" maxlength="80" style="
+        width:100%;padding:0.5rem 0.65rem;border:1.5px solid var(--border);border-radius:6px;
+        font-family:'Syne',sans-serif;font-size:0.85rem;outline:none;
+        transition:border-color 0.15s;
+      " onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--border)'">
+      <div id="calLHint" style="display:none;margin-top:0.35rem;font-size:0.68rem;color:#8b5cf6;font-family:'Syne Mono',monospace;line-height:1.5">
+        💡 Verwende <strong>{L11}</strong> im Titel, damit jeder Schüler automatisch sein Fach sieht.<br>
+        z.B. „Klausur {L11}" → wird zu „Klausur MA1" je nach Kurswahl.
+      </div>
+    </div>
+
+    <!-- Beschreibung -->
+    <div>
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Beschreibung (optional)</div>
+      <textarea id="calDesc" placeholder="Weitere Details…" rows="2" maxlength="300" style="
+        width:100%;padding:0.5rem 0.65rem;border:1.5px solid var(--border);border-radius:6px;
+        font-family:'Syne',sans-serif;font-size:0.85rem;outline:none;resize:vertical;
+        transition:border-color 0.15s;
+      " onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    </div>
+
+    <!-- Farbe -->
+    <div>
+      <div style="font-family:'Syne Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem">Farbe</div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap" id="calColorPicker"></div>
+    </div>
+
+    <!-- Fehler -->
+    <div id="calError" style="display:none;color:#c04040;font-size:0.78rem;font-weight:700"></div>
+
+    <!-- Speichern -->
+    <button onclick="saveCalEntry()" style="
+      background:var(--ink);color:var(--bg);border:none;border-radius:6px;
+      padding:0.6rem 1.25rem;font-family:'Syne',sans-serif;font-weight:700;
+      font-size:0.88rem;cursor:pointer;transition:opacity 0.15s;width:100%;
+    " id="calSaveBtn">Speichern</button>
+  </div>
+</div>
+
+<!-- TAB: FREIE RÄUME -->
+<div id="viewRooms">
+<div class="free-panel">
+  <div class="free-header">
+    <div class="free-title" id="freeTitle">Laden…</div>
+    <div class="free-pill" id="freePill"></div>
+  </div>
+  <div id="roomsContainer">
+    <div class="loading-bar">
+      <div class="dot-pulse"><span></span><span></span><span></span></div>
+      Stundenpläne werden abgefragt…
+    </div>
+  </div>
+</div>
+
+<div class="timetable-wrap">
+  <div class="day-nav">
+    <button class="nav-btn" id="prevBtn" onclick="shiftDay(-1)">←</button>
+    <div class="day-label" id="dayLabel"></div>
+    <button class="nav-btn" id="nextBtn" onclick="shiftDay(1)">→</button>
+  </div>
+  <div class="day-grid-outer" style="position:relative"><div class="day-grid" id="dayGrid"></div><div id="timeLine" style="display:none;position:absolute;left:0;right:0;width:100%;pointer-events:none;z-index:10;"><div style="display:flex;align-items:center;gap:3px;"><div style="width:90px;flex-shrink:0;text-align:right;padding-right:0.5rem;font-family:'Syne Mono',monospace;font-size:0.6rem;color:var(--accent);font-weight:700" id="timeLineLabel"></div><div style="flex:1;height:2px;background:var(--accent);border-radius:1px;position:relative"><div style="position:absolute;left:-3px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:var(--accent)"></div></div></div></div></div>
+</div>
+
+</div><!-- end viewRooms -->
+
+<script>
+// Blocks containing their Einzelstunden
+// Normaler Stundenplan
+const BLOCKS_NORMAL = [
+  {
+    name: "Block 1",
+    stunden: [
+      { nr:"S1", label:"07:45", start:745,  end:830  },
+      { nr:"S2", label:"09:15", start:835,  end:915  },
+    ]
+  },
+  {
+    name: "Block 2",
+    stunden: [
+      { nr:"S3", label:"09:35", start:935,  end:1020 },
+      { nr:"S4", label:"11:05", start:1025, end:1105 },
+    ]
+  },
+  {
+    name: "Block 3",
+    stunden: [
+      { nr:"S5", label:"11:25", start:1125, end:1210 },
+      { nr:"S6", label:"12:55", start:1215, end:1255 },
+    ]
+  },
+  {
+    name: "Block 4",
+    stunden: [
+      { nr:"S7", label:"13:30", start:1330, end:1435 },
+      { nr:"S9", label:"15:15", start:1435, end:1515 },
+    ]
+  },
+  {
+    name: "Block 5",
+    stunden: [
+      { nr:"S10", label:"15:30", start:1530, end:1615 },
+      { nr:"S11", label:"16:15", start:1615, end:1700 },
+    ]
+  },
+];
+
+// Donnerstag: alles 50 Minuten nach hinten
+const BLOCKS_DONNERSTAG = [
+  {
+    name: "Block 1",
+    stunden: [
+      { nr:"S1", label:"08:35", start:835,  end:920  },
+      { nr:"S2", label:"10:05", start:925,  end:1005 },
+    ]
+  },
+  {
+    name: "Block 2",
+    stunden: [
+      { nr:"S3", label:"10:25", start:1025, end:1110 },
+      { nr:"S4", label:"11:55", start:1115, end:1155 },
+    ]
+  },
+  {
+    name: "Block 3",
+    stunden: [
+      { nr:"S5", label:"12:15", start:1215, end:1300 },
+      { nr:"S6", label:"13:45", start:1305, end:1345 },
+    ]
+  },
+  {
+    name: "Block 4",
+    stunden: [
+      { nr:"S7", label:"14:20", start:1420, end:1525 },
+      { nr:"S9", label:"16:05", start:1525, end:1605 },
+    ]
+  },
+  {
+    name: "Block 5",
+    stunden: [
+      { nr:"S10", label:"16:20", start:1620, end:1705 },
+      { nr:"S11", label:"17:05", start:1705, end:1750 },
+    ]
+  },
+];
+
+// Grouped view: blocks 1+2 together, block 3 separate, block 4 separate
+const BLOCKS_GROUPED = {
+  normal: [
+    { groupName: "Blöcke 1 & 2", blocks: ["Block 1", "Block 2"] },
+    { groupName: "Block 3",      blocks: ["Block 3"] },
+    { groupName: "Block 4",      blocks: ["Block 4"] },
+  ]
+};
+
+function getBlocks(date) {
+  return date.getDay() === 4 ? BLOCKS_DONNERSTAG : BLOCKS_NORMAL;
+}
+
+const BLOCKS = BLOCKS_NORMAL; // Fallback für globale Nutzung
+
+// Flat list for easy lookup (alle möglichen Zeiten)
+const ALL_STUNDEN = [...BLOCKS_NORMAL, ...BLOCKS_DONNERSTAG].flatMap(b => b.stunden);
+
+let dayOffset     = 0;
+let selectedDate  = null;
+let selectedStunde = null;
+
+// ── Dev Modus ────────────────────────────────
+let _devTime = null; // { hours, minutes } oder null
+let _devDate = null; // Date Objekt oder null
+
+function getNow() {
+  if (_devTime || _devDate) {
+    const base = _devDate ? new Date(_devDate) : new Date();
+    if (_devTime) { base.setHours(_devTime.hours, _devTime.minutes, 0, 0); }
+    return base;
+  }
+  return new Date();
+}
+
+function openDevPanel() {
+  if (!adminMode) return;
+  openAdminPanel('dev');
+}
+
+function closeDevPanel() {
+  closeAdminPanel();
+}
+
+// ── Admin Mode ──────────────────────────────
+let adminMode = false;
+
+function activateAdmin() {
+  var pw = document.getElementById('adminPwInput').value;
+  var errEl = document.getElementById('adminError');
+  // Verify password against server
+  fetch('/api/kalender/global', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ admin_pw: pw, date: '2000-01-01', title: '__test__', id: '__test__' })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.ok || d.error !== 'Falsches Admin-Passwort') {
+      // Password correct – delete test entry if created
+      fetch('/api/kalender/global/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ admin_pw: pw, id: '__test__' }) });
+      adminMode = true;
+      sessionStorage.setItem('roomtis_admin', 'true');
+      sessionStorage.setItem('roomtis_admin_pw', pw);
+      errEl.style.display = 'none';
+      document.getElementById('adminPwInput').value = '';
+      document.getElementById('adminOn').style.display = '';
+      document.getElementById('adminOff').style.display = 'none';
+    } else {
+      errEl.textContent = 'Falsches Passwort';
+      errEl.style.display = '';
+    }
+  }).catch(function(e) {
+    errEl.textContent = 'Fehler: ' + e.message;
+    errEl.style.display = '';
+  });
+}
+
+function deactivateAdmin() {
+  adminMode = false;
+  sessionStorage.removeItem('roomtis_admin');
+  sessionStorage.removeItem('roomtis_admin_pw');
+  document.getElementById('adminOn').style.display = 'none';
+  document.getElementById('adminOff').style.display = '';
+  // Reset dev overrides
+  resetDevTime();
+  resetDevDate();
+}
+
+function getAdminPw() {
+  return sessionStorage.getItem('roomtis_admin_pw') || '';
+}
+
+function openAdminPanel(tab) {
+  if (!adminMode) return;
+  if (tab === 'ln') loadLNummern().then(function(){ renderLNGrid(); });
+  setAdminTab(tab || 'dev');
+  var overlay = document.getElementById('adminOverlay');
+  var panel   = document.getElementById('adminPanel');
+  overlay.style.display = '';
+  panel.style.display = '';
+  // Set dev input values
+  var now = getNow();
+  document.getElementById('devTimeInput').value =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  var d = _devDate || new Date();
+  document.getElementById('devDateInput').value =
+    d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  updateDevIndicator();
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    overlay.style.opacity = '1';
+    panel.style.transform = 'translateY(0)';
+  }); });
+}
+
+function closeAdminPanel() {
+  var overlay = document.getElementById('adminOverlay');
+  var panel   = document.getElementById('adminPanel');
+  overlay.style.opacity = '0';
+  panel.style.transform = 'translateY(100%)';
+  setTimeout(function(){ overlay.style.display = 'none'; panel.style.display = 'none'; }, 320);
+}
+
+function setAdminTab(tab) {
+  document.getElementById('adminDevSection').style.display = tab === 'dev' ? '' : 'none';
+  document.getElementById('adminLNSection').style.display  = tab === 'ln'  ? '' : 'none';
+  var tabDev = document.getElementById('adminTabDev');
+  var tabLN  = document.getElementById('adminTabLN');
+  if (tab === 'dev') {
+    tabDev.style.background = '#3a3834'; tabDev.style.borderColor = '#a09a90'; tabDev.style.color = 'white';
+    tabLN.style.background = ''; tabLN.style.borderColor = ''; tabLN.style.color = '';
+  } else {
+    tabLN.style.background = '#3a3834'; tabLN.style.borderColor = '#a09a90'; tabLN.style.color = 'white';
+    tabDev.style.background = ''; tabDev.style.borderColor = ''; tabDev.style.color = '';
+  }
+}
+
+function applyDevTime() {
+  const val = document.getElementById('devTimeInput').value;
+  if (!val) return;
+  const [h, m] = val.split(':').map(Number);
+  _devTime = { hours: h, minutes: m };
+  refreshAll();
+  updateDevIndicator();
+}
+
+function applyDevDate() {
+  const val = document.getElementById('devDateInput').value;
+  if (!val) return;
+  const [y, mo, d] = val.split('-').map(Number);
+  _devDate = new Date(y, mo-1, d, 0, 0, 0, 0);
+  refreshAll();
+  updateDevIndicator();
+}
+
+function setDevTimeQuick(timeInt) {
+  const h = Math.floor(timeInt / 100);
+  const m = timeInt % 100;
+  _devTime = { hours: h, minutes: m };
+  document.getElementById('devTimeInput').value = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  refreshAll();
+  updateDevIndicator();
+}
+
+function setDevDay(weekday) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const cur   = _devDate || today;
+  const diff  = weekday - cur.getDay();
+  const nd    = new Date(cur);
+  nd.setDate(nd.getDate() + diff);
+  _devDate = nd;
+  document.getElementById('devDateInput').value =
+    nd.getFullYear() + '-' + String(nd.getMonth()+1).padStart(2,'0') + '-' + String(nd.getDate()).padStart(2,'0');
+  refreshAll();
+  updateDevIndicator();
+}
+
+function resetDevTime() {
+  _devTime = null;
+  document.getElementById('devTimeInput').value = '';
+  document.getElementById('devTimeStatus').textContent = '';
+  refreshAll();
+  updateDevIndicator();
+}
+
+function resetDevDate() {
+  _devDate = null;
+  document.getElementById('devDateInput').value = '';
+  refreshAll();
+  updateDevIndicator();
+}
+
+function updateDevIndicator() {
+  const active = _devTime || _devDate;
+  document.getElementById('devActiveIndicator').style.display = active ? '' : 'none';
+  // Zeige in Topbar einen kleinen Hinweis
+  const clock = document.getElementById('liveClock');
+  if (active) {
+    const n = getNow();
+    clock.style.color = 'var(--accent)';
+    clock.textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  } else {
+    clock.style.color = '#a09a90';
+  }
+}
+
+function refreshAll() {
+  buildDayGrid();
+  updateClock();
+  // Freie Räume neu laden falls eine Stunde ausgewählt ist
+  if (selectedDate && selectedStunde) {
+    const fakeDate = _devDate ? new Date(_devDate) : selectedDate;
+    if (_devTime) fakeDate.setHours(_devTime.hours, _devTime.minutes, 0, 0);
+    loadForCell(fakeDate, selectedStunde);
+  }
+}
+
+// ── Clock ────────────────────────────────────
+function updateClock() {
+  const n = getNow();
+  const clock = document.getElementById('liveClock');
+  clock.textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 10000);
+
+// ── Zeitbalken ───────────────────────────────
+let cellMap = []; // [{start, end, top, height}] – nach jedem buildDayGrid befüllt
+
+function updateTimeLine() {
+  const line  = document.getElementById('timeLine');
+  const label = document.getElementById('timeLineLabel');
+  if (!line || !cellMap.length) { if (line) line.style.display = 'none'; return; }
+
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const curDate = _devDate ? new Date(_devDate) : getDateWithOffset(dayOffset);
+  const isToday = (_devDate || _devTime) ? true : curDate.getTime() === today.getTime();
+  const now     = getNow();
+  const wd      = curDate.getDay();
+
+  if (!isToday || wd < 1 || wd > 5) { line.style.display = 'none'; return; }
+
+  const nowInt   = toTimeInt(now);
+  const dayStart = cellMap[0].start;
+  const last     = cellMap[cellMap.length - 1];
+  const dayEnd   = last.end;
+
+  if (nowInt < dayStart || nowInt > dayEnd) { line.style.display = 'none'; return; }
+
+  let topPx = null;
+
+  for (let i = 0; i < cellMap.length; i++) {
+    const { start, end, top, height } = cellMap[i];
+
+    // Genau auf Blockende oder 1 Minute danach → noch in der Zelle (ganz unten)
+    if (nowInt === end && i < cellMap.length - 1) {
+      topPx = cellMap[i + 1].top;
+      break;
+    }
+    // Innerhalb einer Zelle
+    if (nowInt >= start && nowInt < end) {
+      topPx = top + (nowInt - start) / (end - start) * height;
+      break;
+    }
+    // In Pause zwischen zwei Zellen
+    if (i < cellMap.length - 1 && nowInt > end && nowInt < cellMap[i + 1].start) {
+      const nextStart = cellMap[i + 1].start;
+      // Erste Minute nach Blockende → Balken bleibt am Ende der aktuellen Zelle
+      if (nowInt <= addMinute(end, 1)) {
+        topPx = top + height;
+      } else {
+        // Rest der Pause → Balken auf der Trennlinie (zwischen bottom dieser und top nächster)
+        topPx = top + height + (cellMap[i + 1].top - (top + height)) / 2;
+      }
+      break;
+    }
+  }
+
+  if (topPx === null) { line.style.display = 'none'; return; }
+
+  label.textContent = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  line.style.display = '';
+  line.style.top = Math.round(topPx - line.offsetHeight / 2) + 'px';
+}
+
+setInterval(updateTimeLine, 30000);
+
+// ── Helpers ──────────────────────────────────
+function toTimeInt(d) { return d.getHours()*100 + d.getMinutes(); }
+function addMinute(timeInt, mins) {
+  const h = Math.floor(timeInt / 100);
+  const m = timeInt % 100;
+  const total = h * 60 + m + mins;
+  return Math.floor(total / 60) * 100 + (total % 60);
+}
+function toDateInt(d) {
+  return parseInt(d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'));
+}
+function getDateWithOffset(offset) {
+  const d = new Date(); d.setDate(d.getDate() + offset); d.setHours(0,0,0,0); return d;
+}
+function getBaseMonday() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const wd = today.getDay();
+  const d  = new Date(today);
+  if (wd === 0)      d.setDate(d.getDate() + 1);
+  else if (wd === 6) d.setDate(d.getDate() + 2);
+  else               d.setDate(d.getDate() - (wd-1));
+  return d;
+}
+function getMinOffset() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const monday = getBaseMonday();
+  return Math.round((monday - today) / (24*3600*1000));
+}
+function getMaxOffset() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const monday = getBaseMonday();
+  // Allow navigation until Friday of NEXT week (monday + 11 days)
+  const nextFriday = new Date(monday); nextFriday.setDate(monday.getDate() + 11);
+  return Math.round((nextFriday - today) / (24*3600*1000));
+}
+function getCurrentStunde() {
+  const t = toTimeInt(getNow());
+  const blocks = getBlocks(getNow());
+  return blocks.flatMap(b => b.stunden).find(s => s.start <= t && t < s.end) || null;
+}
+
+// ── API ──────────────────────────────────────
+async function fetchFreeRooms(dateInt, timeInt) {
+  const res = await fetch(`/api/freie-raeume?date=${dateInt}&time=${timeInt}`);
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error);
+  return data;
+}
+
+// ── Render rooms ─────────────────────────────
+// ── Favoriten ────────────────────────────────
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem('roomtis_favs') || '[]'); } catch(e) { return []; }
+}
+function setFavs(favs) {
+  localStorage.setItem('roomtis_favs', JSON.stringify(favs));
+}
+function toggleFav(name) {
+  const favs = getFavs();
+  const idx  = favs.indexOf(name);
+  if (idx >= 0) favs.splice(idx, 1);
+  else favs.push(name);
+  setFavs(favs);
+}
+
+// Räume werden von der API geladen
+let ALLE_RAEUME = [];
+async function ladeAlleRaeume() {
+  if (ALLE_RAEUME.length > 0) return;
+  try {
+    const res  = await fetch('/api/raeume');
+    const data = await res.json();
+    if (data.ok) ALLE_RAEUME = data.raeume;
+  } catch(e) {}
+}
+
+async function openFavEditor() {
+  const overlay = document.getElementById('favOverlay');
+  const panel   = document.getElementById('favPanel');
+  const grid    = document.getElementById('favEditorGrid');
+
+  grid.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;font-family:\'Syne Mono\',monospace">Laden…</div>';
+  overlay.style.display = '';
+  panel.style.display = '';
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    panel.style.transform = 'translateY(0)';
+  }));
+
+  await ladeAlleRaeume();
+
+  const favs = getFavs();
+  grid.innerHTML = '';
+
+  // Gruppiere nach Gebäude
+  ['A','B','C','D'].forEach(function(g) {
+    const raeume = ALLE_RAEUME.filter(r => r.startsWith(g));
+    if (!raeume.length) return;
+    const label = document.createElement('div');
+    label.style.cssText = 'width:100%;font-family:"Syne Mono",monospace;font-size:0.62rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin:0.5rem 0 0.25rem';
+    label.textContent = 'Gebäude ' + g;
+    grid.appendChild(label);
+
+    raeume.forEach(function(name) {
+      const chip = document.createElement('div');
+      chip.className = 'fav-editor-chip' + (favs.includes(name) ? ' selected' : '');
+      chip.textContent = name;
+      chip.addEventListener('click', function() {
+        toggleFav(name);
+        chip.classList.toggle('selected', getFavs().includes(name));
+        if (window._lastRoomsData) renderRooms(window._lastRoomsData, window._lastStunde, window._lastDate);
+      });
+      grid.appendChild(chip);
+    });
+  });
+}
+
+function closeFavEditor() {
+  const overlay = document.getElementById('favOverlay');
+  const panel   = document.getElementById('favPanel');
+  overlay.style.opacity = '0';
+  panel.style.transform = 'translateY(100%)';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    panel.style.display = 'none';
+  }, 320);
+}
+
+function renderRooms(data, stunde, date) {
+  // Merke letzte Daten für Re-render aus Favoriten-Editor
+  window._lastRoomsData = data;
+  window._lastStunde    = stunde;
+  window._lastDate      = date;
+
+  const freie   = data.freie;
+  const belegte = data.belegte || [];
+  const dateStr = date.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit' });
+  const block   = BLOCKS.find(b => b.stunden.some(s => s.nr === stunde.nr));
+  const favs    = getFavs();
+
+  document.getElementById('freeTitle').textContent = `${freie.length} Räume frei`;
+  document.getElementById('freePill').textContent  =
+    `${block ? block.name + ' · ' : ''}${stunde.nr} · ${stunde.label} Uhr · ${dateStr}`;
+
+  const container = document.getElementById('roomsContainer');
+  container.innerHTML = '';
+
+  function makeChip(r, isFree, animIdx) {
+    const isFav = getFavs().includes(r.name);
+    const chip  = document.createElement('div');
+    chip.dataset.room = r.name;
+    chip.style.animationDelay = `${animIdx * 0.02}s`;
+    chip.title = r.desc || '';
+    if (isFav && isFree)       chip.className = 'room-chip fav';
+    else if (isFav && !isFree) chip.className = 'room-chip fav-belegt';
+    else                       chip.className = 'room-chip';
+    chip.appendChild(document.createTextNode(r.name));
+    return chip;
+  }
+
+  const favFrei   = freie.filter(r => favs.includes(r.name));
+  const favBelegt = belegte.filter(r => favs.includes(r.name));
+  if (favFrei.length > 0 || favBelegt.length > 0) {
+    const favLabel = document.createElement('div');
+    favLabel.className = 'fav-section-label';
+    favLabel.textContent = 'Favoriten';
+    container.appendChild(favLabel);
+    const favWrap = document.createElement('div');
+    favWrap.className = 'rooms-wrap';
+    favWrap.style.marginBottom = '0.75rem';
+    [...favFrei, ...favBelegt].forEach((r, i) => favWrap.appendChild(makeChip(r, favFrei.includes(r), i)));
+    container.appendChild(favWrap);
+    const allLabel = document.createElement('div');
+    allLabel.className = 'fav-section-label';
+    allLabel.textContent = 'Alle freien Räume';
+    container.appendChild(allLabel);
+  }
+
+  if (freie.length === 0) {
+    const noRoom = document.createElement('div');
+    noRoom.className = 'no-class';
+    noRoom.textContent = 'Keine freien Räume gefunden.';
+    container.appendChild(noRoom);
+  } else {
+    const wrap = document.createElement('div');
+    wrap.className = 'rooms-wrap';
+    freie.forEach((r, i) => wrap.appendChild(makeChip(r, true, i)));
+    container.appendChild(wrap);
+  }
+}
+
+// ── Load for cell ────────────────────────────
+async function loadForCell(date, stunde) {
+  selectedDate   = date;
+  selectedStunde = stunde;
+
+  document.getElementById('freeTitle').textContent = 'Laden…';
+  document.getElementById('freePill').textContent  = '';
+  document.getElementById('roomsContainer').innerHTML = `
+    <div class="loading-bar">
+      <div class="dot-pulse"><span></span><span></span><span></span></div>
+      Stundenpläne werden abgefragt…
+    </div>`;
+
+  buildDayGrid();
+
+  try {
+    const data = await fetchFreeRooms(toDateInt(date), stunde.start);
+    renderRooms(data, stunde, date);
+  } catch(e) {
+    document.getElementById('roomsContainer').innerHTML = `<div class="no-class">Fehler: ${e.message}</div>`;
+    document.getElementById('freeTitle').textContent = 'Fehler';
+  }
+}
+
+// ── Build day grid ───────────────────────────
+
+// Find a dateInt that has planStunden data for the same weekday.
+// If the given date has no data (holiday), try -7 then +7 days.
+function getEffectiveDateInt(date) {
+  var dateInt = dateToInt(date);
+  var hasData = Object.keys(planStunden).some(function(k) { return planStunden[k].date === dateInt; });
+  if (hasData) return dateInt;
+  var prev = new Date(date); prev.setDate(prev.getDate() - 7);
+  var prevInt = dateToInt(prev);
+  var hasPrev = Object.keys(planStunden).some(function(k) { return planStunden[k].date === prevInt; });
+  if (hasPrev) return prevInt;
+  var next = new Date(date); next.setDate(next.getDate() + 7);
+  var nextInt = dateToInt(next);
+  var hasNext = Object.keys(planStunden).some(function(k) { return planStunden[k].date === nextInt; });
+  if (hasNext) return nextInt;
+  return dateInt;
+}
+
+// Helper: lookup meineFaecher for a slotKey (e.g. "20260302-835"), with weekday+time fallback
+function getFachForSlot(slotKey) {
+  var direct = meineFaecher[slotKey];
+  if (direct) return direct;
+  // Fallback: find same weekday + startTime from another week
+  var parts = slotKey.split('-');
+  var dateInt = parseInt(parts[0]);
+  var startTime = parseInt(parts[1]);
+  var ds = String(dateInt);
+  var slotDate = new Date(parseInt(ds.slice(0,4)), parseInt(ds.slice(4,6))-1, parseInt(ds.slice(6,8)));
+  var wd = slotDate.getDay();
+  var result = null;
+  Object.keys(meineFaecher).forEach(function(fk) {
+    if (result) return;
+    var fp = fk.split('-');
+    if (parseInt(fp[1]) !== startTime) return;
+    var fd = String(parseInt(fp[0]));
+    var fDate = new Date(parseInt(fd.slice(0,4)), parseInt(fd.slice(4,6))-1, parseInt(fd.slice(6,8)));
+    if (fDate.getDay() === wd) result = meineFaecher[fk];
+  });
+  return result;
+}
+
+function addPlanChip(cell, date, stunde) {
+  if (!Object.keys(planStunden).length) return;
+  var dateInt = getEffectiveDateInt(date);
+  var matchSlot = null, matchKey = null;
+  Object.keys(planStunden).forEach(function(k) {
+    var s = planStunden[k];
+    if (s.date === dateInt && s.startTime >= stunde.start && s.startTime < stunde.end) {
+      if (!matchSlot) { matchSlot = s; matchKey = k; }
+    }
+  });
+  if (!matchSlot || !matchKey) return;
+
+  var subjName = getFachForSlot(matchKey);
+  var subj = subjName && matchSlot.subjects.find(function(s){ return s.name === subjName; });
+
+  // If multi-subject slot and nothing selected, just skip (might be no class at this time)
+  if (!subj && matchSlot.subjects.length > 1) return;
+  if (!subj) return;
+  var cancelled = subj.cancelled;
+  var irregular = subj.irregular && !cancelled;
+  var chip = document.createElement('div');
+  chip.style.cssText = [
+    'background:' + (cancelled ? '#fdf5f5' : (irregular ? '#fff8f0' : 'transparent')),
+    'color:' + (cancelled ? '#c07070' : 'var(--ink)'),
+    'font-weight:800','font-size:0.78rem',
+    'display:flex','flex-direction:column','align-items:flex-start',
+    'gap:1px','width:100%','pointer-events:none',
+    irregular ? 'border-left:2.5px solid #e8971a;padding-left:4px' : '',
+    cancelled ? 'text-decoration:line-through;opacity:0.7' : '',
+  ].filter(Boolean).join(';');
+
+  // Build teacher line with change highlighting
+  var teacherHtml = '';
+  if (subj.teachers && subj.teachers.length) {
+    if (subj.teacherChanged && subj.origTeachers && subj.origTeachers.length) {
+      teacherHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem">'
+        + '<span style="text-decoration:line-through;color:#c0a070">' + subj.origTeachers.join(', ') + '</span>'
+        + ' <span style="color:#d97a0a;font-weight:700">' + subj.teachers.join(', ') + '</span></div>';
+    } else {
+      teacherHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem;color:var(--muted)">' + subj.teachers.join(', ') + '</div>';
+    }
+  }
+
+  // Build room line with change highlighting
+  var roomHtml = '';
+  if (subj.room) {
+    if (subj.roomChanged && subj.origRooms && subj.origRooms.length) {
+      roomHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem">'
+        + '<span style="text-decoration:line-through;color:#c0a070">' + subj.origRooms.join(', ') + '</span>'
+        + ' <span style="color:#d97a0a;font-weight:700">' + subj.room + '</span></div>';
+    } else {
+      roomHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem;color:var(--muted)">' + subj.room + '</div>';
+    }
+  }
+
+  chip.innerHTML = '<div>' + subj.name + '</div>'
+    + teacherHtml
+    + roomHtml
+    + (cancelled ? '<div style="font-size:0.5rem;color:#c07070;font-weight:700">Entfall</div>' : '')
+    + (irregular ? '<div style="font-size:0.5rem;color:#d97a0a;font-weight:700">Geändert</div>' : '');
+  cell.appendChild(chip);
+}
+
+// Map block name to block number for matching calendar events
+var BLOCK_MAP = {
+  'Block 1': '1', 'Block 2': '2', 'Block 3': null, 'Block 4': '4', 'Block 5': '5'
+};
+var BLOCK3_MAP = { 0: '3.1', 1: '3.2' }; // index within block 3 stunden
+
+function addCalChips(cell, date, blockName, stundeIndex) {
+  // Determine which block id this cell represents
+  var blockId = null;
+  if (blockName === 'Block 3') {
+    blockId = BLOCK3_MAP[stundeIndex] || null;
+  } else {
+    blockId = BLOCK_MAP[blockName] || null;
+  }
+  if (!blockId) return;
+
+  var dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+
+  // Collect matching calendar entries for this date and block
+  var allEntries = (calGlobalEntries || []).concat(calPersonalEntries || []);
+  var matches = allEntries.filter(function(e) {
+    return e.date === dateStr && !e.allDay && e.block === blockId;
+  });
+
+  matches.forEach(function(e) {
+    // Resolve L-placeholders
+    var resolved = resolveCalL(e);
+    if (!resolved.relevant) return;
+
+    var chip = document.createElement('div');
+    chip.style.cssText = 'background:' + (e.color || '#4a90d9') + '18;color:' + (e.color || '#4a90d9')
+      + ';font-weight:700;font-size:0.6rem;padding:1px 5px;border-radius:3px;'
+      + 'border-left:2.5px solid ' + (e.color || '#4a90d9') + ';'
+      + 'pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:1px;';
+    chip.textContent = resolved.title;
+    cell.appendChild(chip);
+  });
+}
+
+function buildDayGrid() {
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const nowTime = toTimeInt(getNow());
+  const date    = _devDate ? new Date(_devDate) : getDateWithOffset(dayOffset);
+  const isToday = (_devDate || _devTime) ? true : date.getTime() === today.getTime();
+
+  document.getElementById('dayLabel').textContent =
+    date.toLocaleDateString('de-DE', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+
+  document.getElementById('prevBtn').disabled = dayOffset <= getMinOffset();
+  document.getElementById('nextBtn').disabled = dayOffset >= getMaxOffset();
+
+  
+
+  const blocksForDay = getBlocks(date);
+  blocksForDay.forEach(block => {
+    // Insert Mittagspause before Block 4
+    if (block.name === "Block 4") {
+      const isDo = date.getDay() === 4;
+      const pauseLabel = isDo ? "13:45 – 14:20" : "12:55 – 13:30";
+      const pauseStart = isDo ? 1345 : 1255;
+      const pauseEnd   = isDo ? 1420 : 1330;
+
+      // Pause divider
+      const pauseDivider = document.createElement('div');
+      pauseDivider.className = 'block-divider';
+      pauseDivider.style.marginTop = '10px';
+      pauseDivider.innerHTML = '<div class="block-name" style="color:var(--muted)">Mittag</div><div class="block-line" style="background:var(--border)"></div>';
+      grid.appendChild(pauseDivider);
+
+      // Pause row
+      const pauseRow = document.createElement('div');
+      pauseRow.className = 'day-row pause-block';
+
+      const pauseLbl = document.createElement('div');
+      pauseLbl.className = 'row-label';
+      pauseLbl.innerHTML = '<strong style="color:var(--muted)">Pause</strong><span>' + pauseLabel + '</span>';
+
+      const pauseCell = document.createElement('div');
+      const isPausePast    = date < today || (isToday && nowTime >= pauseEnd);
+      const isPauseCurrent = isToday && pauseStart <= nowTime && nowTime < pauseEnd;
+      const isPauseActive  = selectedDate && selectedStunde &&
+                             date.getTime() === selectedDate.getTime() &&
+                             selectedStunde.start === pauseStart;
+
+      pauseCell.className = 'day-cell' +
+        (isPauseCurrent ? ' is-current' : '') +
+        (isPausePast && !isPauseCurrent ? ' is-past' : '') +
+        (isPauseActive ? ' is-active' : '');
+      pauseCell.dataset.start = pauseStart;
+      pauseCell.dataset.end   = pauseEnd;
+
+      const pauseStunde = { nr:"Pause", label:pauseLabel, start:pauseStart, end:pauseEnd };
+      pauseCell.onclick = () => loadForCell(new Date(date), pauseStunde);
+      // Find subjects in the gap between Block 3.2 and Block 4
+      const pSearchStart = isDo ? 1155 : 1210;
+      const pSearchEnd   = isDo ? 1435 : 1345;
+      const pDateInt = getEffectiveDateInt(date);
+      const blocksForPause = getBlocks(date);
+      Object.keys(planStunden).forEach(function(k) {
+        var s = planStunden[k];
+        if (s.date !== pDateInt || s.startTime < pSearchStart || s.startTime >= pSearchEnd) return;
+        var inBlock = false;
+        blocksForPause.forEach(function(b) {
+          b.stunden.forEach(function(st) {
+            if (s.startTime >= st.start && s.startTime < st.end) inBlock = true;
+          });
+        });
+        if (inBlock) return;
+        // This slot is in the Mittagspause gap
+        var subjName = getFachForSlot(k);
+        var subj = subjName && s.subjects.find(function(su){ return su.name === subjName; });
+        if (!subj) return;
+        var cancelled = subj.cancelled;
+        var irregular = subj.irregular && !cancelled;
+        var chip = document.createElement('div');
+        chip.style.cssText = [
+          'background:' + (cancelled ? '#fdf5f5' : (irregular ? '#fff8f0' : 'transparent')),
+          'color:' + (cancelled ? '#c07070' : 'var(--ink)'),
+          'font-weight:800','font-size:0.78rem',
+          'display:flex','flex-direction:column','align-items:flex-start',
+          'gap:1px','width:100%','pointer-events:none',
+          irregular ? 'border-left:2.5px solid #e8971a;padding-left:4px' : '',
+          cancelled ? 'text-decoration:line-through;opacity:0.7' : '',
+        ].filter(Boolean).join(';');
+        var pTeachHtml = '', pRoomHtml = '';
+        if (subj.teachers && subj.teachers.length) {
+          if (subj.teacherChanged && subj.origTeachers && subj.origTeachers.length) {
+            pTeachHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem"><span style="text-decoration:line-through;color:#c0a070">' + subj.origTeachers.join(', ') + '</span> <span style="color:#d97a0a;font-weight:700">' + subj.teachers.join(', ') + '</span></div>';
+          } else {
+            pTeachHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem;color:var(--muted)">' + subj.teachers.join(', ') + '</div>';
+          }
+        }
+        if (subj.room) {
+          if (subj.roomChanged && subj.origRooms && subj.origRooms.length) {
+            pRoomHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem"><span style="text-decoration:line-through;color:#c0a070">' + subj.origRooms.join(', ') + '</span> <span style="color:#d97a0a;font-weight:700">' + subj.room + '</span></div>';
+          } else {
+            pRoomHtml = '<div style="font-family:Syne Mono,monospace;font-size:0.55rem;color:var(--muted)">' + subj.room + '</div>';
+          }
+        }
+        chip.innerHTML = '<div>' + subj.name + '</div>' + pTeachHtml + pRoomHtml
+          + (irregular ? '<div style="font-size:0.5rem;color:#d97a0a;font-weight:700">Geändert</div>' : '');
+        pauseCell.appendChild(chip);
+      });
+      addAGChipGeneric(pauseCell, date, { start: pauseStart, end: pauseEnd });
+      addCalChips(pauseCell, date, 'Mittag', null);
+
+      pauseRow.appendChild(pauseLbl);
+      pauseRow.appendChild(pauseCell);
+      grid.appendChild(pauseRow);
+    }
+
+    // Block header divider
+    const divider = document.createElement('div');
+    divider.className = 'block-divider';
+    if (block.name === "Block 4") divider.style.marginTop = '10px';
+    divider.innerHTML = `<div class="block-name">${block.name}</div><div class="block-line"></div>`;
+    grid.appendChild(divider);
+
+    // Rows for each Stunde in this block
+    const isBlock3 = block.name === 'Block 3';
+    if (isBlock3) {
+      block.stunden.forEach((stunde, si) => {
+        const subLabel = block.name + '.' + (si+1);
+        const row = document.createElement('div');
+        row.className = 'day-row block3-row';
+        const lbl = document.createElement('div');
+        lbl.className = 'row-label';
+        const tStr = String(stunde.start).padStart(4,'0');
+        lbl.innerHTML = `<strong style="color:var(--muted)">${subLabel}</strong><span>${tStr.slice(0,2)}:${tStr.slice(2)}</span>`;
+        const cell = document.createElement('div');
+        const isPast    = date < today || (isToday && nowTime >= stunde.end);
+        const isCurrent = isToday && stunde.start <= nowTime && nowTime < stunde.end;
+        const isActive  = selectedDate && selectedStunde &&
+                          date.getTime() === selectedDate.getTime() &&
+                          stunde.nr === selectedStunde.nr;
+        cell.className = 'day-cell' +
+          (isCurrent ? ' is-current' : '') +
+          (isPast && !isCurrent ? ' is-past' : '') +
+          (isActive ? ' is-active' : '');
+        cell.dataset.start = stunde.start;
+        cell.dataset.end   = stunde.end;
+        cell.onclick = () => loadForCell(new Date(date), stunde);
+        addPlanChip(cell, date, stunde);
+        addAGChipGeneric(cell, date, stunde);
+        addCalChips(cell, date, 'Block 3', si);
+        row.appendChild(lbl);
+        row.appendChild(cell);
+        grid.appendChild(row);
+      });
+    } else {
+      // Blocks 1,2,4,5: one merged row per block
+      const s0 = block.stunden[0];
+      const s1 = block.stunden[block.stunden.length-1];
+      const tStr0 = String(s0.start).padStart(4,'0');
+      const tStr1 = String(s1.end).padStart(4,'0');
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      const lbl = document.createElement('div');
+      lbl.className = 'row-label';
+      lbl.innerHTML = `<span style="text-align:center;width:100%">${tStr0.slice(0,2)}:${tStr0.slice(2)} – ${tStr1.slice(0,2)}:${tStr1.slice(2)}</span>`;
+      const cell = document.createElement('div');
+      const isPast    = date < today || (isToday && nowTime >= s1.end);
+      const isCurrent = isToday && s0.start <= nowTime && nowTime < s1.end;
+      const isActive  = selectedDate && selectedStunde &&
+                        date.getTime() === selectedDate.getTime() &&
+                        (selectedStunde.nr === s0.nr || selectedStunde.nr === s1.nr);
+      cell.className = 'day-cell' +
+        (isCurrent ? ' is-current' : '') +
+        (isPast && !isCurrent ? ' is-past' : '') +
+        (isActive ? ' is-active' : '');
+      cell.dataset.start = s0.start;
+      cell.dataset.end   = s1.end;
+      // Click on merged cell: use first stunde as representative
+      cell.onclick = () => loadForCell(new Date(date), s0);
+      // Show plan chips for both stunden
+      block.stunden.forEach(stunde => { addPlanChip(cell, date, stunde); addAGChipGeneric(cell, date, stunde); });
+      addCalChips(cell, date, block.name, null);
+      row.appendChild(lbl);
+      row.appendChild(cell);
+      grid.appendChild(row);
+    }
+  });
+
+  // Zeitbalken: offsetTop-Map nach Layout einmalig aufbauen
+  setTimeout(() => {
+    rebuildCellMap();
+  }, 50);
+}
+
+function rebuildCellMap() {
+  const grid = document.getElementById('dayGrid');
+  const outer = grid.parentElement; // day-grid-outer
+  const outerRect = outer.getBoundingClientRect();
+  cellMap = Array.from(grid.querySelectorAll('.day-cell[data-start]')).map(c => {
+    const rect = c.getBoundingClientRect();
+    return {
+      start:  parseInt(c.dataset.start),
+      end:    parseInt(c.dataset.end),
+      top:    rect.top - outerRect.top,
+      height: rect.height,
+    };
+  });
+  updateTimeLine();
+}
+
+// ── Navigation ───────────────────────────────
+function shiftDay(dir) {
+  let next = dayOffset + dir;
+  // Skip weekends
+  let nextDate = getDateWithOffset(next);
+  let wd = nextDate.getDay();
+  if (wd === 6) next += (dir > 0 ? 2 : -1);
+  if (wd === 0) next += (dir > 0 ? 1 : -2);
+  if (next < getMinOffset() || next > getMaxOffset()) return;
+  dayOffset = next;
+  buildDayGrid();
+
+  document.body.style.overflowX = 'hidden';
+
+  const grid  = document.getElementById('dayGrid');
+  const fromX = dir > 0 ? '30px' : '-30px';
+  const items = Array.from(grid.children);
+
+  // Set initial state: grid slides in from side, items start invisible
+  grid.style.transform = `translateX(${fromX})`;
+  grid.style.opacity   = '0';
+  items.forEach(el => {
+    el.style.opacity   = '0';
+    el.style.transform = 'translateY(8px)';
+  });
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // Slide grid in
+      grid.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease-out';
+      grid.style.transform  = 'translateX(0)';
+      grid.style.opacity    = '1';
+
+      // Stagger items top to bottom
+      items.forEach((el, i) => {
+        el.style.transition = `opacity 0.22s ease-out ${i * 22}ms, transform 0.26s cubic-bezier(0.4,0,0.2,1) ${i * 22}ms`;
+        el.style.opacity    = '1';
+        el.style.transform  = 'translateY(0)';
+      });
+
+      setTimeout(() => {
+        grid.style.transition = '';
+        items.forEach(el => { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; });
+        document.body.style.overflowX = '';
+        rebuildCellMap();
+      }, 400 + items.length * 22);
+    });
+  });
+}
+
+// ── Init ─────────────────────────────────────
+let currentTab = 'rooms';
+
+function toggleMenu() {
+  var menu = document.getElementById('dropdownMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#menuBtn') && !e.target.closest('#dropdownMenu')) {
+    var menu = document.getElementById('dropdownMenu');
+    if (menu) menu.style.display = 'none';
+  }
+});
+
+function switchTab(tab) {
+  if (tab === currentTab) return;
+  currentTab = tab;
+
+  document.getElementById('viewRooms').style.display     = tab === 'rooms'    ? '' : 'none';
+  document.getElementById('viewPlan').style.display       = tab === 'plan'     ? '' : 'none';
+  document.getElementById('viewKalender').style.display   = tab === 'kalender' ? '' : 'none';
+  document.getElementById('viewSettings').style.display   = tab === 'settings' ? '' : 'none';
+
+  if (tab === 'plan' && !meineKlasse) {
+    document.getElementById('planTimetable').style.display = 'none';
+  }
+  if (tab === 'plan' && meineKlasse) {
+    document.getElementById('planTimetable').style.removeProperty('display');
+  }
+
+  if (tab === 'kalender') {
+    loadCalendar();
+  }
+
+  if (tab === 'settings') {
+    document.getElementById('settingsKlasseLabel').textContent = meineKlasse || 'Nicht gewählt';
+    document.getElementById('adminOn').style.display  = adminMode ? '' : 'none';
+    document.getElementById('adminOff').style.display = adminMode ? 'none' : '';
+  }
+
+  if (tab === 'rooms') {
+    const grid = document.getElementById('dayGrid');
+    document.body.style.overflowX = 'hidden';
+    grid.style.transform = 'translateX(30px)';
+    grid.style.opacity   = '0';
+    const items = Array.from(grid.children);
+    items.forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      grid.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease-out';
+      grid.style.transform  = 'translateX(0)';
+      grid.style.opacity    = '1';
+      items.forEach((el, i) => {
+        el.style.transition = `opacity 0.22s ease-out ${i*22}ms, transform 0.26s cubic-bezier(0.4,0,0.2,1) ${i*22}ms`;
+        el.style.opacity    = '1';
+        el.style.transform  = 'translateY(0)';
+      });
+      setTimeout(() => {
+        grid.style.transition = '';
+        items.forEach(el => { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; });
+        document.body.style.overflowX = '';
+      }, 400 + items.length * 22);
+    }));
+  }
+}
+
+// ── Klassen ─────────────────────────────────
+const KLASSEN_GRUPPEN = [
+  { label: "5",  key: "5",  sub: ["05a","05b","05c","05d"] },
+  { label: "6",  key: "6",  sub: ["06a","06b","06c","06d"] },
+  { label: "7",  key: "7",  sub: ["07a","07b","07c","07d"] },
+  { label: "8",  key: "8",  sub: ["08a","08b","08c","08d"] },
+  { label: "9",  key: "9",  sub: ["09a","09b","09c","09d"] },
+  { label: "10", key: "10", sub: ["10a","10b","10c","10d"] },
+  { label: "11", key: "11", sub: ["11a","11b","11c","11d"] },
+  { label: "12", key: "12", sub: ["12a","12b","12c","12d","12e","12f","12g"] },
+  { label: "13", key: "13", sub: ["13a","13b","13c","13d","13e","13f"] },
+];
+
+let meineKlasse = localStorage.getItem('roomtis_klasse') || null;
+
+function renderKlassenGrid() {
+  const grid = document.getElementById('klassenGrid');
+  grid.innerHTML = '';
+
+  // All jahrgang chips in one row
+  const row = document.createElement('div');
+  row.className = 'jahrgang-row';
+  grid.appendChild(row);
+
+  KLASSEN_GRUPPEN.forEach(gruppe => {
+    const isActive = meineKlasse && gruppe.sub.includes(meineKlasse);
+
+    const chip = document.createElement('div');
+    chip.className = 'klasse-chip' + (isActive ? ' active' : '');
+    chip.innerHTML = `${gruppe.label} <span style="font-size:0.6rem;opacity:0.6">▾</span>`;
+    chip.onclick = () => toggleDropdown(gruppe.key);
+    row.appendChild(chip);
+  });
+
+  // Dropdowns sit below the row, one at a time
+  const ddContainer = document.createElement('div');
+  ddContainer.id = 'dd-container';
+  ddContainer.style.width = '100%';
+  grid.appendChild(ddContainer);
+
+  KLASSEN_GRUPPEN.forEach(gruppe => {
+    const isActive = meineKlasse && gruppe.sub.includes(meineKlasse);
+
+    const dd = document.createElement('div');
+    dd.id = `dd-${gruppe.key}`;
+    dd.className = 'jahrgang-dropdown';
+    dd.style.display = isActive ? '' : 'none';
+    const inner = document.createElement('div');
+    inner.className = 'klassen-grid';
+    gruppe.sub.forEach(sub => {
+      const subChip = document.createElement('div');
+      subChip.className = 'klasse-chip' + (sub === meineKlasse ? ' active' : '');
+      subChip.textContent = sub;
+      subChip.onclick = () => { closeAllDropdowns(); klasseWaehlen(sub); };
+      inner.appendChild(subChip);
+    });
+    dd.appendChild(inner);
+    ddContainer.appendChild(dd);
+  });
+}
+
+function toggleDropdown(key) {
+  const dd = document.getElementById(`dd-${key}`);
+  const isOpen = dd.style.display !== 'none';
+  closeAllDropdowns();
+  if (!isOpen) {
+    dd.style.display = '';
+    // Highlight the clicked jahrgang chip
+    document.querySelectorAll('.jahrgang-row .klasse-chip').forEach(c => c.classList.remove('active'));
+    const chips = document.querySelectorAll('.jahrgang-row .klasse-chip');
+    const idx = KLASSEN_GRUPPEN.findIndex(g => g.key === key);
+    if (chips[idx]) chips[idx].classList.add('active');
+  }
+}
+
+function closeAllDropdowns() {
+  KLASSEN_GRUPPEN.forEach(g => {
+    const dd = document.getElementById(`dd-${g.key}`);
+    if (dd) dd.style.display = 'none';
+  });
+  // Reset highlights to only show selected class's jahrgang
+  document.querySelectorAll('.jahrgang-row .klasse-chip').forEach((c, i) => {
+    const gruppe = KLASSEN_GRUPPEN[i];
+    c.classList.toggle('active', !!(meineKlasse && gruppe.sub.includes(meineKlasse)));
+  });
+}
+
+
+
+let meineFaecher  = {};
+
+function getUserId() {
+  var uid = localStorage.getItem('roomtis_uid');
+  if (!uid) {
+    uid = 'user-' + Math.random().toString(36).slice(2,10) + '-' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem('roomtis_uid', uid);
+  }
+  return uid;
+}
+
+async function loadFaecherFromServer(klasse) {
+  var k = klasse || meineKlasse || '';
+  try {
+    var res  = await fetch('/api/faecher/load?uid=' + getUserId() + '&klasse=' + encodeURIComponent(k));
+    var data = await res.json();
+    if (data.ok) meineFaecher = data.faecher || {};
+  } catch(e) {
+    // Fallback: localStorage, only if klasse matches
+    try {
+      var saved = JSON.parse(localStorage.getItem('roomtis_faecher') || '{}');
+      meineFaecher = (saved.klasse === k) ? (saved.faecher || {}) : {};
+    } catch(e2) { meineFaecher = {}; }
+  }
+}
+let planModus     = 'auswahl'; // 'auswahl' or 'ansicht'
+let isUnterstufe  = false;
+let planDayOffset = 0;
+let planStunden   = []; // all stunden loaded from API
+let planMonday    = null;
+
+function isOberstufe(klasse) {
+  return klasse && (klasse.startsWith('12') || klasse.startsWith('13'));
+}
+function getJahrgang(klasse) {
+  return klasse ? klasse.replace(/^0+/, '').replace(/[a-z]/gi, '') : '';
+}
+
+function klasseWaehlen(klasse) {
+  meineKlasse = klasse;
+  localStorage.setItem('roomtis_klasse', klasse);
+  document.getElementById('klasseLabel').textContent = klasse;
+  document.getElementById('klasseWahl').style.display = 'none';
+  document.getElementById('gewaehlteKlasse').style.display = '';
+
+  if (isOberstufe(klasse)) {
+    // Oberstufe: immer Kursauswahl zeigen, kein Timetable im Plan-Tab
+    document.getElementById('saveBtn').style.display = '';
+    document.getElementById('modusBtn').style.display = 'none';
+    document.getElementById('planTimetable').style.removeProperty('display');
+    loadOberstufenplan(klasse);
+  } else {
+    // Unterstufe: direkt Timetable zeigen
+    document.getElementById('saveBtn').style.display = 'none';
+    document.getElementById('modusBtn').style.display = 'none';
+    document.getElementById('planTimetable').style.removeProperty('display');
+    loadUnterstufeplan(klasse);
+  }
+}
+
+function klasseZuruecksetzen() {
+  meineKlasse = null;
+  localStorage.removeItem('roomtis_klasse');
+  document.getElementById('gewaehlteKlasse').style.display = 'none';
+  document.getElementById('planTimetable').style.display   = 'none';
+  document.getElementById('klasseWahl').style.display      = '';
+  document.getElementById('planTitle').textContent         = 'Stundenplan';
+  document.getElementById('planPill').textContent          = '';
+  document.getElementById('modusBtn').style.display        = 'none';
+  document.getElementById('saveBtn').style.display         = 'none';
+  planModus = 'auswahl';
+  renderKlassenGrid();
+}
+
+// ── Plan day navigation (mirrors shiftDay) ──────────────
+function shiftPlanDay(dir) {
+  var next = planDayOffset + dir;
+  if (next < 0 || next > 4) return;
+
+  const grid  = document.getElementById('planDayGrid');
+  const fromX = dir > 0 ? '30px' : '-30px';
+
+  document.body.style.overflowX = 'hidden';
+  grid.style.transform = 'translateX(' + fromX + ')';
+  grid.style.opacity   = '0';
+  const items = Array.from(grid.children);
+  items.forEach(function(el) { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; });
+
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+    grid.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease-out';
+    grid.style.transform  = 'translateX(0)';
+    grid.style.opacity    = '1';
+    items.forEach(function(el, i) {
+      el.style.transition = 'opacity 0.22s ease-out ' + (i*22) + 'ms, transform 0.26s cubic-bezier(0.4,0,0.2,1) ' + (i*22) + 'ms';
+      el.style.opacity    = '1';
+      el.style.transform  = 'translateY(0)';
+    });
+    setTimeout(function() {
+      grid.style.transition = '';
+      items.forEach(function(el) { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; });
+      document.body.style.overflowX = '';
+    }, 400 + items.length * 22);
+  }); });
+
+  planDayOffset = next;
+  buildPlanDayGrid();
+}
+
+// ── Load Oberstufen timetable from API ───────────────────
+function getMondayOfCurrentWeek() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var wd = today.getDay();
+  var d  = new Date(today);
+  if (wd === 0)      d.setDate(d.getDate() + 1);
+  else if (wd === 6) d.setDate(d.getDate() + 2);
+  else               d.setDate(d.getDate() - (wd-1));
+  return d;
+}
+
+function dateToInt(d) {
+  return parseInt(d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'));
+}
+
+async function loadUnterstufeplan(klasse) {
+  document.getElementById('planTitle').textContent = 'Laden…';
+  isUnterstufe = true;
+  planStunden = {};
+  meineFaecher = {};
+  try {
+    var monday = getMondayOfCurrentWeek();
+    planMonday = monday;
+    var fri = new Date(monday); fri.setDate(monday.getDate() + 11);
+    var start = dateToInt(monday);
+    var end   = dateToInt(fri);
+    var res  = await fetch('/api/stundenplan_klasse?klasse=' + encodeURIComponent(klasse) + '&start=' + start + '&end=' + end);
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    planStunden = {};
+    (data.stunden || []).forEach(function(e) {
+      var key = e.date + '-' + e.startTime;
+      if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
+      var already = planStunden[key].subjects.find(function(s){ return s.name === e.subject.name; });
+      if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
+    });
+
+    // Load saved faecher for Unterstufe (same system as Oberstufe)
+    await loadFaecherFromServer();
+
+    // For single-subject slots: auto-select. For multi-subject slots: keep saved choice or leave empty.
+    Object.keys(planStunden).forEach(function(k) {
+      var slot = planStunden[k];
+      if (slot.subjects.length === 1) {
+        // Only one subject – always select it
+        meineFaecher[k] = slot.subjects[0].name;
+      } else if (slot.subjects.length > 1 && !getFachForSlot(k)) {
+        // Multiple subjects, nothing saved – leave unselected
+      }
+    });
+
+    planModus = 'ansicht';
+    document.getElementById('planTitle').textContent = klasse + ' – Stundenplan';
+    document.getElementById('planTimetable').style.removeProperty('display');
+    // Show save button if there are multi-subject slots that need choosing
+    var hasMulti = Object.keys(planStunden).some(function(k) { return planStunden[k].subjects.length > 1; });
+    if (hasMulti) {
+      document.getElementById('saveBtn').style.display = '';
+      document.getElementById('modusBtn').style.display = 'none';
+    }
+    planDayOffset = 0;
+    buildPlanDayGrid();
+  } catch(e) {
+    document.getElementById('planTitle').textContent = 'Fehler: ' + e.message;
+  }
+}
+
+async function loadOberstufenplan(klasse) {
+  document.getElementById('planTitle').textContent = 'Laden…';
+  isUnterstufe = false;
+  planStunden = {};
+  meineFaecher = {};
+  // Load saved courses for this specific class
+  await loadFaecherFromServer();
+  await loadFaecherFromServer();
+
+  var jg = klasse.replace(/[a-z]/g, '');
+  planMonday = getMondayOfCurrentWeek();
+  var fri = new Date(planMonday); fri.setDate(planMonday.getDate() + 11);
+
+  try {
+    var res  = await fetch('/api/stundenplan?jahrgang=' + jg + '&start=' + dateToInt(planMonday) + '&end=' + dateToInt(fri));
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    // Group by slot: { "20260223-835": [{ name, longName, room }, ...] }
+    planStunden = {};
+    data.stunden.forEach(function(e) {
+      var key = e.date + '-' + e.startTime;
+      if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
+      planStunden[key].subjects.push({
+        name: e.subject.name,
+        longName: e.subject.longName,
+        room: e.rooms[0] ? e.rooms[0].name : '',
+        teachers: e.teachers || [],
+        cancelled: e.cancelled || false,
+        irregular: e.irregular || false,
+        roomChanged: e.roomChanged || false,
+        teacherChanged: e.teacherChanged || false,
+        origRooms: e.origRooms || [],
+        origTeachers: e.origTeachers || [],
+        lsnumber: e.lsnumber || null
+      });
+    });
+
+    document.getElementById('planTitle').textContent = meineKlasse + ' – Kurse auswählen';
+    document.getElementById('planTimetable').style.removeProperty('display');
+    // Immer in Auswahl-Modus starten
+    planModus = 'auswahl';
+    document.getElementById('saveBtn').style.display = '';
+    document.getElementById('modusBtn').style.display = 'none';
+    // Auswahl: always start on Monday (offset 0 = Mo)
+    planDayOffset = 0;
+    buildPlanDayGrid();
+
+  } catch(e) {
+    document.getElementById('planTitle').textContent = 'Fehler: ' + e.message;
+  }
+}
+
+// ── Build plan day grid (mirrors buildDayGrid) ───────────
+function buildPlanDayGrid() {
+  var grid    = document.getElementById('planDayGrid');
+  grid.innerHTML = '';
+
+  var today   = new Date(); today.setHours(0,0,0,0);
+  var nowTime = toTimeInt(new Date());
+
+  // planDayOffset = 0(Mo)..4(Fr), use planMonday as base week
+  var baseMonday = planMonday || getMondayOfCurrentWeek();
+  var date = new Date(baseMonday);
+  date.setDate(date.getDate() + planDayOffset);
+  date.setHours(0,0,0,0);
+  var isToday = date.getTime() === today.getTime();
+
+  var WOCHENTAGE = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  document.getElementById('planDayLabel').textContent = WOCHENTAGE[date.getDay()];
+  document.getElementById('planPrevBtn').disabled = planDayOffset <= 0;
+  document.getElementById('planNextBtn').disabled = planDayOffset >= 4;
+
+  var blocksForDay = getBlocks(date);
+  var effectiveDateInt = getEffectiveDateInt(date);
+
+  blocksForDay.forEach(function(block) {
+    // Pause before block 4
+    if (block.name === 'Block 4') {
+      var isDo       = date.getDay() === 4;
+      var pauseStart = isDo ? 1345 : 1255;
+      var pauseEnd   = isDo ? 1420 : 1330;
+      var pauseLabel = isDo ? '13:45 – 14:20' : '12:55 – 13:30';
+      var isPausePast = date < today || (isToday && nowTime >= pauseEnd);
+      var isPauseCur  = isToday && pauseStart <= nowTime && nowTime < pauseEnd;
+
+      var pauseDivider = document.createElement('div');
+      pauseDivider.className = 'block-divider';
+      pauseDivider.innerHTML = '<div class="block-name" style="color:var(--muted)">Mittag</div><div class="block-line" style="background:var(--border)"></div>';
+      grid.appendChild(pauseDivider);
+
+      var pauseRow = document.createElement('div');
+      pauseRow.className = 'day-row pause-block';
+      var pLbl = document.createElement('div');
+      pLbl.className = 'row-label';
+      pLbl.innerHTML = '<strong style="color:var(--muted)">Pause</strong><span>' + pauseLabel + '</span>';
+      var pCell = document.createElement('div');
+      pCell.className = 'day-cell' + (isPauseCur ? ' is-current' : '') + (isPausePast && !isPauseCur ? ' is-past' : '');
+      pCell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-items:center;cursor:default;min-height:36px;';
+
+      // Show subjects scheduled during Mittagspause
+      // The gap is between Block 3.2 end and Block 4 start.
+      // Slots in this gap have varying startTimes, so use a wider range:
+      // anything starting from Block 3.2 end (1210/1300 area) to Block 4 start
+      var pauseSearchStart = isDo ? 1155 : 1210; // after Block 3.2 start
+      var pauseSearchEnd   = isDo ? 1435 : 1345; // Block 4 start
+      var pauseDateInt = effectiveDateInt;
+      var pauseSlots = [];
+      Object.keys(planStunden).forEach(function(k) {
+        var s = planStunden[k];
+        if (s.date === pauseDateInt && s.startTime >= pauseSearchStart && s.startTime < pauseSearchEnd) {
+          // Exclude slots that belong to Block 3.2 or Block 4 proper
+          // Block 3.2 starts at 1215 (normal) or 1215 (Do), Block 4 starts at 1345 (normal) or ~1435 (Do)
+          // We only want slots that are NOT already shown in Block 3 or Block 4
+          var isBlock3 = false, isBlock4 = false;
+          blocksForDay.forEach(function(b) {
+            b.stunden.forEach(function(st) {
+              if (s.startTime >= st.start && s.startTime < st.end) {
+                if (b.name === 'Block 3') isBlock3 = true;
+                if (b.name === 'Block 4') isBlock4 = true;
+              }
+            });
+          });
+          if (!isBlock3 && !isBlock4) pauseSlots.push({ slot: s, key: k });
+        }
+      });
+      pauseSlots.forEach(function(ps) {
+        var pauseSlot = ps.slot, pauseSlotKey = ps.key;
+        if (pauseSlot.subjects.length > 0) {
+          pauseSlot.subjects.sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(subj) {
+          var selected = getFachForSlot(pauseSlotKey) === subj.name;
+          if (planModus === 'ansicht' && !selected && !isUnterstufe) return;
+          var showEntfall = false; // generic view, no cancellations
+          var showGreen2 = planModus === 'auswahl' && selected;
+          var chip = document.createElement('div');
+          chip.dataset.slot = pauseSlotKey;
+          chip.dataset.fach = subj.name;
+          chip.style.cssText = [
+            'background:' + (showEntfall ? '#fdf5f5' : (showGreen2 ? 'var(--free-bg)' : 'white')),
+            'border:1.5px solid ' + (showEntfall ? '#e0b0b0' : (showGreen2 ? 'var(--free-border)' : 'var(--border)')),
+            'color:' + (showEntfall ? '#c07070' : (showGreen2 ? 'var(--free)' : 'var(--ink)')),
+            'border-radius:5px','padding:0.25rem 0.45rem',
+            planModus === 'auswahl' ? 'cursor:pointer' : 'cursor:default',
+            'display:flex','flex-direction:column','align-items:center',
+            'transition:all 0.15s','flex-shrink:0',
+            showEntfall ? 'text-decoration:line-through;opacity:0.7' : '',
+          ].filter(Boolean).join(';');
+          var pTeachStr = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
+          chip.innerHTML = '<div style="font-weight:800;font-size:0.75rem;white-space:nowrap">' + subj.name + '</div>'
+            + (pTeachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + pTeachStr + '</div>' : '')
+            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '')
+            + (showEntfall ? '<div style="font-size:0.5rem;color:#c07070;font-weight:700">Entfall</div>' : '');
+          if (planModus === 'auswahl') {
+            (function(c, sk, sn) {
+              c.addEventListener('click', function(ev) { ev.stopPropagation(); selectFachPlan(c, sk, sn); });
+            })(chip, pauseSlotKey, subj.name);
+          }
+          pCell.appendChild(chip);
+        });
+        }
+      });
+
+      pauseRow.appendChild(pLbl);
+      pauseRow.appendChild(pCell);
+      grid.appendChild(pauseRow);
+    }
+
+    var divider = document.createElement('div');
+    divider.className = 'block-divider';
+    divider.innerHTML = '<div class="block-name">' + block.name + '</div><div class="block-line"></div>';
+    grid.appendChild(divider);
+
+    var isBlock3 = block.name === 'Block 3';
+
+    if (isBlock3) {
+      // Block 3: split into 3.1 and 3.2 — one row each
+      block.stunden.forEach(function(stunde, si) {
+        var subLabel = block.name + '.' + (si+1);
+        var tStr = String(stunde.start).padStart(4,'0');
+        var subRow = document.createElement('div');
+        subRow.className = 'day-row';
+
+        var subLbl = document.createElement('div');
+        subLbl.className = 'row-label';
+        subLbl.innerHTML = '<strong style="color:var(--muted)">' + subLabel + '</strong><span>' + tStr.slice(0,2) + ':' + tStr.slice(2) + '</span>';
+
+        var subCell = document.createElement('div');
+        var isPast    = date < today || (isToday && nowTime >= stunde.end);
+        var isCurrent = isToday && stunde.start <= nowTime && nowTime < stunde.end;
+        subCell.className = 'day-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
+        subCell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-items:center;cursor:default;min-height:48px;';
+
+        var dateInt = effectiveDateInt;
+        var slot = null, slotKey = null;
+        Object.keys(planStunden).forEach(function(k) {
+          var s = planStunden[k];
+          if (s.date === dateInt && s.startTime >= stunde.start && s.startTime < stunde.end) {
+            if (!slot) { slot = s; slotKey = k; }
+          }
+        });
+        if (slot && slot.subjects.length > 0) {
+          var isMulti = slot.subjects.length > 1;
+          var canSelect = planModus === 'auswahl' || (isUnterstufe && isMulti);
+          slot.subjects.sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(subj) {
+            var selected = getFachForSlot(slotKey) === subj.name;
+            if (!canSelect && !selected) return;
+            var showGreen2 = canSelect && selected;
+            var chip = document.createElement('div');
+            chip.dataset.slot = slotKey;
+            chip.dataset.fach = subj.name;
+            chip.style.cssText = [
+              'background:' + (showGreen2 ? 'var(--free-bg)' : 'white'),
+              'border:1.5px solid ' + (showGreen2 ? 'var(--free-border)' : 'var(--border)'),
+              'color:' + (showGreen2 ? 'var(--free)' : 'var(--ink)'),
+              'border-radius:5px','padding:0.25rem 0.45rem',
+              canSelect ? 'cursor:pointer' : 'cursor:default',
+              'display:flex','flex-direction:column','align-items:center',
+              'transition:all 0.15s','flex-shrink:0',
+            ].filter(Boolean).join(';');
+            var teachStr2 = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
+            chip.innerHTML = '<div style="font-weight:800;font-size:0.75rem;white-space:nowrap">' + subj.name + '</div>'
+              + (teachStr2 ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + teachStr2 + '</div>' : '')
+              + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '');
+            if (canSelect) chip.onclick = function() { selectFachPlan(chip, slotKey, subj.name); };
+            subCell.appendChild(chip);
+          });
+        }
+        subRow.appendChild(subLbl);
+        subRow.appendChild(subCell);
+        grid.appendChild(subRow);
+      });
+    } else {
+    // One row for the whole block — both Stunden merged into one cell
+    var row = document.createElement('div');
+    row.className = 'day-row';
+
+    var s0 = block.stunden[0];
+    var s1 = block.stunden[1] || s0;
+    var tStr0 = String(s0.start).padStart(4,'0');
+    var tStr1 = String(s1.end).padStart(4,'0');
+    var lbl = document.createElement('div');
+    lbl.className = 'row-label';
+    lbl.innerHTML = '<span style="text-align:center;width:100%">'
+      + tStr0.slice(0,2) + ':' + tStr0.slice(2) + ' – ' + tStr1.slice(0,2) + ':' + tStr1.slice(2) + '</span>';
+
+    var cell = document.createElement('div');
+    var isPast    = date < today || (isToday && nowTime >= s1.end);
+    var isCurrent = isToday && s0.start <= nowTime && nowTime < s1.end;
+    cell.className = 'day-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
+    cell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-items:center;cursor:default;min-height:48px;';
+
+    // Collect subjects for both Stunden in this block
+    block.stunden.forEach(function(stunde) {
+      var dateInt = effectiveDateInt;
+      var slot = null;
+      var slotKey = null;
+      Object.keys(planStunden).forEach(function(k) {
+        var s = planStunden[k];
+        if (s.date === dateInt && s.startTime >= stunde.start && s.startTime < stunde.end) {
+          if (!slot) { slot = s; slotKey = k; }
+        }
+      });
+
+      if (slot && slot.subjects.length > 0) {
+        if (cell.children.length > 0) {
+          var sep = document.createElement('div');
+          sep.style.cssText = 'width:1px;height:24px;background:var(--border);flex-shrink:0;align-self:center;';
+          cell.appendChild(sep);
+        }
+        var isMulti2 = slot.subjects.length > 1;
+        var canSelect2 = planModus === 'auswahl' || (isUnterstufe && isMulti2);
+        slot.subjects.sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(subj) {
+          var selected = getFachForSlot(slotKey) === subj.name;
+          if (!canSelect2 && !selected) return;
+          var showGreen3 = canSelect2 && selected;
+          var chip = document.createElement('div');
+          chip.dataset.slot = slotKey;
+          chip.dataset.fach = subj.name;
+          chip.style.cssText = [
+            'background:' + (showGreen3 ? 'var(--free-bg)' : 'white'),
+            'border:1.5px solid ' + (showGreen3 ? 'var(--free-border)' : 'var(--border)'),
+            'color:' + (showGreen3 ? 'var(--free)' : 'var(--ink)'),
+            'border-radius:5px','padding:0.25rem 0.45rem',
+            canSelect2 ? 'cursor:pointer' : 'cursor:default',
+            'display:flex','flex-direction:column','align-items:center',
+            'transition:all 0.15s','flex-shrink:0',
+          ].filter(Boolean).join(';');
+          var teachStr = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
+          chip.innerHTML = '<div style="font-weight:800;font-size:0.75rem;white-space:nowrap">' + subj.name + '</div>'
+            + (teachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + teachStr + '</div>' : '')
+            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '');
+          if (canSelect2) chip.onclick = function() { selectFachPlan(chip, slotKey, subj.name); };
+          cell.appendChild(chip);
+        });
+      }
+    }); // end stunden forEach
+
+    row.appendChild(lbl);
+    row.appendChild(cell);
+    grid.appendChild(row);
+    } // end else (non-block3)
+  }); // end blocks forEach
+}
+
+function togglePlanModus() {
+  planModus = planModus === 'auswahl' ? 'ansicht' : 'auswahl';
+  var btn     = document.getElementById('modusBtn');
+  var saveBtn = document.getElementById('saveBtn');
+  if (planModus === 'ansicht') {
+    btn.textContent = 'Kurse bearbeiten';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color = 'var(--accent)';
+    saveBtn.style.display = 'none';
+    // Stay on current day
+  } else {
+    btn.textContent = 'Fertig';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--muted)';
+    saveBtn.style.display = '';
+    saveBtn.textContent = 'Speichern';
+    saveBtn.style.background = 'var(--ink)';
+  }
+  buildPlanDayGrid();
+}
+
+function selectFachPlan(el, slotKey, subjName) {
+  var allChips = document.querySelectorAll('[data-slot]');
+  for (var i = 0; i < allChips.length; i++) {
+    if (allChips[i].dataset.slot === slotKey) {
+      allChips[i].style.background  = 'white';
+      allChips[i].style.borderColor = 'var(--border)';
+      allChips[i].style.color       = 'var(--ink)';
+    }
+  }
+  if (meineFaecher[slotKey] === subjName) {
+    delete meineFaecher[slotKey];
+  } else {
+    meineFaecher[slotKey]  = subjName;
+    el.style.background    = 'var(--free-bg)';
+    el.style.borderColor   = 'var(--free-border)';
+    el.style.color         = 'var(--free)';
+  }
+}
+
+function faecherSpeichernOberstufe(event) {
+  // Save to server
+  fetch('/api/faecher/save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ uid: getUserId(), klasse: meineKlasse || '', faecher: meineFaecher })
+  });
+  // One entry in localStorage too
+  localStorage.setItem('roomtis_faecher', JSON.stringify({ klasse: meineKlasse, faecher: meineFaecher }));
+  var btn = event.target;
+  btn.textContent = '✓ Gespeichert';
+  btn.style.background = 'var(--free)';
+  // Also refresh the rooms tab timetable and plan grid
+  buildDayGrid();
+  buildPlanDayGrid();
+  setTimeout(function() {
+    btn.textContent = 'Speichern';
+    btn.style.background = 'var(--ink)';
+  }, 1200);
+}
+
+function selectFachOberstufe(chipId) {
+  var el = document.getElementById(chipId);
+  if (!el) return;
+  var slotKey  = el.dataset.slot;
+  var subjName = el.dataset.fach;
+  var chips = document.querySelectorAll('[data-slot]');
+  for (var i = 0; i < chips.length; i++) {
+    if (chips[i].dataset.slot === slotKey) {
+      chips[i].style.background  = 'white';
+      chips[i].style.borderColor = 'var(--border)';
+      chips[i].style.color       = 'var(--ink)';
+    }
+  }
+  if (meineFaecher[slotKey] === subjName) {
+    delete meineFaecher[slotKey];
+  } else {
+    meineFaecher[slotKey]  = subjName;
+    el.style.background    = 'var(--free-bg)';
+    el.style.borderColor   = 'var(--free-border)';
+    el.style.color         = 'var(--free)';
+  }
+}
+
+function initKlassenTab() {
+  renderKlassenGrid();
+  if (meineKlasse) {
+    document.getElementById('klasseLabel').textContent  = meineKlasse;
+    document.getElementById('klasseWahl').style.display = 'none';
+    document.getElementById('gewaehlteKlasse').style.display = '';
+    if (isOberstufe(meineKlasse)) {
+      document.getElementById('saveBtn').style.display = '';
+      document.getElementById('modusBtn').style.display = '';
+      loadOberstufenplan(meineKlasse);
+    } else {
+      document.getElementById('saveBtn').style.display = 'none';
+      document.getElementById('modusBtn').style.display = 'none';
+      loadUnterstufeplan(meineKlasse);
+    }
+  }
+}
+
+// ── AGs ──────────────────────────────────────
+let meineAGs = JSON.parse(localStorage.getItem('roomtis_ags') || '[]');
+let agStunden = {}; // { "20260224-1530": { startTime, endTime, date, subjects: [{name,room,teachers,ag}] } }
+
+function openAGPanel() {
+  var overlay = document.getElementById('agOverlay');
+  var panel   = document.getElementById('agPanel');
+  overlay.style.display = '';
+  panel.style.display = '';
+  document.getElementById('agListLoading').style.display = '';
+  document.getElementById('agList').innerHTML = '';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    overlay.style.opacity = '1';
+    panel.style.transform = 'translateY(0)';
+  }); });
+  // Fetch AG list
+  fetch('/api/ags').then(function(r){ return r.json(); }).then(function(d) {
+    document.getElementById('agListLoading').style.display = 'none';
+    if (!d.ok) {
+      document.getElementById('agListLoading').style.display = '';
+      document.getElementById('agListLoading').textContent = d.error || 'Keine AGs gefunden';
+      return;
+    }
+    if (!d.ags || d.ags.length === 0) {
+      document.getElementById('agListLoading').style.display = '';
+      document.getElementById('agListLoading').textContent = 'Keine AGs gefunden';
+      return;
+    }
+    var list = document.getElementById('agList');
+    d.ags.forEach(function(ag) {
+      var name = ag.name;
+      var chip = document.createElement('div');
+      var selected = meineAGs.indexOf(name) >= 0;
+      chip.style.cssText = 'padding:0.35rem 0.65rem;border-radius:5px;font-family:Syne,sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.15s;'
+        + 'border:1.5px solid ' + (selected ? 'var(--free-border)' : 'var(--border)') + ';'
+        + 'background:' + (selected ? 'var(--free-bg)' : 'white') + ';'
+        + 'color:' + (selected ? 'var(--free)' : 'var(--ink)') + ';';
+      chip.innerHTML = name + (ag.longName ? '<span style="font-weight:400;font-size:0.65rem;opacity:0.6;margin-left:4px">' + ag.longName + '</span>' : '');
+      chip.onclick = function() {
+        var idx = meineAGs.indexOf(name);
+        if (idx >= 0) {
+          meineAGs.splice(idx, 1);
+          chip.style.borderColor = 'var(--border)';
+          chip.style.background = 'white';
+          chip.style.color = 'var(--ink)';
+        } else {
+          meineAGs.push(name);
+          chip.style.borderColor = 'var(--free-border)';
+          chip.style.background = 'var(--free-bg)';
+          chip.style.color = 'var(--free)';
+        }
+        localStorage.setItem('roomtis_ags', JSON.stringify(meineAGs));
+        loadAGStunden().then(function() { buildDayGrid(); });
+      };
+      list.appendChild(chip);
+    });
+  }).catch(function(err) {
+    document.getElementById('agListLoading').textContent = 'Fehler beim Laden: ' + (err.message || err);
+  });
+}
+
+function closeAGPanel() {
+  var overlay = document.getElementById('agOverlay');
+  var panel   = document.getElementById('agPanel');
+  overlay.style.opacity = '0';
+  panel.style.transform = 'translateY(100%)';
+  setTimeout(function(){ overlay.style.display = 'none'; panel.style.display = 'none'; }, 320);
+}
+
+async function loadAGStunden() {
+  agStunden = {};
+  if (!meineAGs.length) return;
+  var monday = getMondayOfCurrentWeek();
+  var fri = new Date(monday); fri.setDate(monday.getDate() + 11);
+  var start = dateToInt(monday);
+  var end   = dateToInt(fri);
+  var fetches = meineAGs.map(function(agName) {
+    return fetch('/api/ag_stundenplan?ag=' + encodeURIComponent(agName) + '&start=' + start + '&end=' + end)
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (!d.ok) return;
+        (d.stunden || []).forEach(function(e) {
+          var key = e.date + '-' + e.startTime;
+          if (!agStunden[key]) agStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
+          var already = agStunden[key].subjects.find(function(s){ return s.name === e.subject.name && s.ag === e.ag; });
+          if (!already) agStunden[key].subjects.push({
+            name: e.subject.name, longName: e.subject.longName || '',
+            room: e.rooms[0] ? e.rooms[0].name : '',
+            teachers: e.teachers || [], ag: e.ag
+          });
+        });
+      }).catch(function(){});
+  });
+  await Promise.all(fetches);
+}
+
+function addAGChip(cell, date, stunde) {
+  if (!Object.keys(agStunden).length) return;
+  var dateInt = dateToInt(date);
+  Object.keys(agStunden).forEach(function(k) {
+    var s = agStunden[k];
+    if (s.date === dateInt && s.startTime >= stunde.start && s.startTime < stunde.end) {
+      s.subjects.forEach(function(subj) {
+        var chip = document.createElement('div');
+        chip.style.cssText = 'background:#f0eeff;color:#6b5b95;font-weight:700;font-size:0.68rem;'
+          + 'display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;pointer-events:none;'
+          + 'border-left:2.5px solid #8b5cf6;padding-left:4px;margin-top:1px;';
+        chip.innerHTML = '<div>' + subj.name + ' <span style="font-size:0.5rem;opacity:0.7">(' + subj.ag + ')</span></div>'
+          + (subj.teachers && subj.teachers.length ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.teachers.join(', ') + '</div>' : '')
+          + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '');
+        cell.appendChild(chip);
+      });
+    }
+  });
+}
+
+// Also support weekday fallback for AG stunden (same week logic)
+function addAGChipGeneric(cell, date, stunde) {
+  if (!Object.keys(agStunden).length) return;
+  var dateInt = dateToInt(date);
+  var wd = date.getDay();
+  Object.keys(agStunden).forEach(function(k) {
+    var s = agStunden[k];
+    // Direct date match
+    if (s.date === dateInt && s.startTime >= stunde.start && s.startTime < stunde.end) {
+      renderAGSubjects(cell, s);
+      return;
+    }
+    // Weekday fallback
+    if (s.startTime >= stunde.start && s.startTime < stunde.end) {
+      var ds = String(s.date);
+      var fd = new Date(parseInt(ds.slice(0,4)), parseInt(ds.slice(4,6))-1, parseInt(ds.slice(6,8)));
+      if (fd.getDay() === wd) renderAGSubjects(cell, s);
+    }
+  });
+}
+
+function renderAGSubjects(cell, slot) {
+  slot.subjects.forEach(function(subj) {
+    // Avoid duplicates
+    if (cell.querySelector('[data-ag-subj="' + subj.name + '-' + subj.ag + '"]')) return;
+    var chip = document.createElement('div');
+    chip.dataset.agSubj = subj.name + '-' + subj.ag;
+    chip.style.cssText = 'background:#f0eeff;color:#6b5b95;font-weight:700;font-size:0.68rem;'
+      + 'display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;pointer-events:none;'
+      + 'border-left:2.5px solid #8b5cf6;padding-left:4px;margin-top:1px;';
+    chip.innerHTML = '<div>' + subj.name + ' <span style="font-size:0.5rem;opacity:0.7">(' + subj.ag + ')</span></div>'
+      + (subj.teachers && subj.teachers.length ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.teachers.join(', ') + '</div>' : '')
+      + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '');
+    cell.appendChild(chip);
+  });
+}
+
+// ── Kalender ─────────────────────────────────
+let calMonth = new Date().getMonth();
+let calYear  = new Date().getFullYear();
+let calGlobalEntries = [];
+let calPersonalEntries = [];
+let calFilter = 'alle'; // 'alle', 'schule', 'meine'
+let calSelectedDay = null;
+let calType = 'personal';
+let calEditId = null;
+let calSelectedColor = '#4a90d9';
+
+const CAL_COLORS = [
+  { color: '#4a90d9', label: 'Blau' },
+  { color: '#e8401a', label: 'Rot' },
+  { color: '#2d5a1b', label: 'Grün' },
+  { color: '#8b5cf6', label: 'Lila' },
+  { color: '#f59e0b', label: 'Orange' },
+  { color: '#ec4899', label: 'Pink' },
+  { color: '#1a1814', label: 'Schwarz' },
+];
+
+const MONATE_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const TAGE_KURZ = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+function setCalFilter(f) {
+  calFilter = f;
+  document.getElementById('calTabAlle').className   = 'cal-tab' + (f === 'alle' ? ' active' : '');
+  document.getElementById('calTabSchule').className  = 'cal-tab' + (f === 'schule' ? ' active' : '');
+  document.getElementById('calTabMeine').className   = 'cal-tab' + (f === 'meine' ? ' active' : '');
+  renderCalendar();
+}
+
+function shiftCalMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  calSelectedDay = null;
+  renderCalendar();
+}
+
+async function loadCalendar() {
+  try {
+    var res1 = await fetch('/api/kalender/global');
+    var d1   = await res1.json();
+    if (d1.ok) calGlobalEntries = d1.entries;
+  } catch(e) { calGlobalEntries = []; }
+  try {
+    var res2 = await fetch('/api/kalender/persoenlich?uid=' + getUserId());
+    var d2   = await res2.json();
+    if (d2.ok) calPersonalEntries = d2.entries;
+  } catch(e) { calPersonalEntries = []; }
+  renderCalendar();
+}
+
+// Resolve {L...} placeholders in calendar entry title/desc using the user's planStunden + meineFaecher
+// lsnumber is now a string like "L11" stored per subject in planStunden
+function resolveCalL(entry) {
+  var title = entry.title || '';
+  var desc  = entry.desc || '';
+  var hasL  = /\{L\d+\}/.test(title) || /\{L\d+\}/.test(desc);
+  if (!hasL) return { title: title, desc: desc, resolved: true, relevant: true };
+
+  // Not in Oberstufe or no data loaded → show raw placeholder
+  if (!meineKlasse || !isOberstufe(meineKlasse) || !Object.keys(planStunden).length || !Object.keys(meineFaecher).length) {
+    return { title: title, desc: desc, resolved: false, relevant: true };
+  }
+
+  // Build L-number → user's chosen subject mapping
+  // lsnumber comes as "L11" string from backend, meineFaecher tells us which subject the user chose per slot
+  var lsMap = {}; // { "L11": { name: "MA1", ... }, ... }
+  Object.keys(planStunden).forEach(function(slotKey) {
+    var slot = planStunden[slotKey];
+    var chosenName = getFachForSlot(slotKey);
+    if (!chosenName) return;
+    slot.subjects.forEach(function(subj) {
+      if (subj.name === chosenName && subj.lsnumber) {
+        lsMap[subj.lsnumber] = subj;
+      }
+    });
+  });
+
+  var relevant = true;
+
+  function replacer(match) {
+    // match is e.g. "{L11}" → extract "L11"
+    var lKey = match.slice(1, -1); // "L11"
+    var subj = lsMap[lKey];
+    if (subj) {
+      return subj.name;
+    } else {
+      // User has no course for this L-number → entry not relevant
+      relevant = false;
+      return match;
+    }
+  }
+
+  var rTitle = title.replace(/\{L\d+\}/g, replacer);
+  var rDesc  = desc.replace(/\{L\d+\}/g, replacer);
+
+  return { title: rTitle, desc: rDesc, resolved: relevant, relevant: relevant };
+}
+
+function getCalEntries(dateStr) {
+  var entries = [];
+  if (calFilter === 'alle' || calFilter === 'schule') {
+    calGlobalEntries.filter(function(e){ return e.date === dateStr; }).forEach(function(e) {
+      var resolved = resolveCalL(e);
+      // Skip entries that aren't relevant for this user (L-number they don't have)
+      if (!resolved.relevant) return;
+      entries.push(Object.assign({}, e, { source: 'schule', title: resolved.title, desc: resolved.desc, _hasL: /\{L\d+\}/.test(e.title || '') || /\{L\d+\}/.test(e.desc || '') }));
+    });
+  }
+  if (calFilter === 'alle' || calFilter === 'meine') {
+    calPersonalEntries.filter(function(e){ return e.date === dateStr; }).forEach(function(e) {
+      var resolved = resolveCalL(e);
+      if (!resolved.relevant) return;
+      entries.push(Object.assign({}, e, { source: 'meine', title: resolved.title, desc: resolved.desc, _hasL: /\{L\d+\}/.test(e.title || '') || /\{L\d+\}/.test(e.desc || '') }));
+    });
+  }
+  return entries;
+}
+
+function renderCalendar() {
+  var label = document.getElementById('calMonthLabel');
+  label.textContent = MONATE_DE[calMonth] + ' ' + calYear;
+
+  var grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  // Weekday headers
+  TAGE_KURZ.forEach(function(d) {
+    var hdr = document.createElement('div');
+    hdr.className = 'cal-weekday';
+    hdr.textContent = d;
+    grid.appendChild(hdr);
+  });
+
+  var firstDay = new Date(calYear, calMonth, 1);
+  var lastDay  = new Date(calYear, calMonth + 1, 0);
+  var startWd  = (firstDay.getDay() + 6) % 7; // Mo=0
+  var today    = new Date(); today.setHours(0,0,0,0);
+
+  // Previous month fill
+  var prevLast = new Date(calYear, calMonth, 0);
+  for (var i = startWd - 1; i >= 0; i--) {
+    var d = prevLast.getDate() - i;
+    var cell = makeCalDay(calYear, calMonth - 1, d, true, today);
+    grid.appendChild(cell);
+  }
+
+  // Current month
+  for (var d = 1; d <= lastDay.getDate(); d++) {
+    var cell = makeCalDay(calYear, calMonth, d, false, today);
+    grid.appendChild(cell);
+  }
+
+  // Fill rest to complete row
+  var totalCells = startWd + lastDay.getDate();
+  var remaining = (7 - (totalCells % 7)) % 7;
+  for (var i = 1; i <= remaining; i++) {
+    var cell = makeCalDay(calYear, calMonth + 1, i, true, today);
+    grid.appendChild(cell);
+  }
+
+  // Day detail
+  if (calSelectedDay) {
+    showCalDayDetail(calSelectedDay);
+  } else {
+    document.getElementById('calDayDetail').style.display = 'none';
+  }
+}
+
+function makeCalDay(year, month, day, otherMonth, today) {
+  var date = new Date(year, month, day);
+  var dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+  var isToday = date.getTime() === today.getTime();
+  var isSelected = calSelectedDay === dateStr;
+
+  var cell = document.createElement('div');
+  cell.className = 'cal-day' + (isToday ? ' today' : '') + (otherMonth ? ' other-month' : '');
+  if (isSelected) {
+    cell.style.background = 'var(--active-bg)';
+    cell.style.borderColor = 'var(--accent)';
+  }
+  cell.onclick = function() {
+    calSelectedDay = dateStr;
+    renderCalendar();
+  };
+
+  var num = document.createElement('div');
+  num.className = 'cal-day-num';
+  num.textContent = day;
+  cell.appendChild(num);
+
+  var entries = getCalEntries(dateStr);
+  entries.slice(0, 3).forEach(function(e) {
+    var dot = document.createElement('div');
+    dot.className = 'cal-dot';
+    dot.style.background = e.color + '22';
+    dot.style.color = e.color;
+    dot.textContent = e.title;
+    cell.appendChild(dot);
+  });
+  if (entries.length > 3) {
+    var more = document.createElement('div');
+    more.className = 'cal-dot';
+    more.style.color = 'var(--muted)';
+    more.textContent = '+' + (entries.length - 3);
+    cell.appendChild(more);
+  }
+
+  return cell;
+}
+
+function showCalDayDetail(dateStr) {
+  var detail = document.getElementById('calDayDetail');
+  detail.style.display = '';
+
+  var parts = dateStr.split('-');
+  var date = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  var dayNames = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+
+  document.getElementById('calDayDetailLabel').textContent = dayNames[date.getDay()] + ', ' + date.getDate() + '. ' + MONATE_DE[date.getMonth()];
+  document.getElementById('calDayDetailDate').textContent = dateStr;
+
+  var list = document.getElementById('calDayEntries');
+  list.innerHTML = '';
+
+  var entries = getCalEntries(dateStr);
+  if (entries.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;font-style:italic">Keine Einträge an diesem Tag.</div>';
+    return;
+  }
+
+  entries.forEach(function(e) {
+    var card = document.createElement('div');
+    card.className = 'cal-entry-card';
+    card.style.borderLeft = '4px solid ' + (e.color || '#4a90d9');
+
+    var badge = e.source === 'schule' ? '<span class="cal-entry-badge" style="background:#fdf0eb;color:#e8401a">Schule</span>' : '<span class="cal-entry-badge" style="background:#eef4ff;color:#4a90d9">Persönlich</span>';
+
+    var lBadge = e._hasL ? ' <span class="cal-entry-badge" style="background:#f0eeff;color:#8b5cf6">individuell</span>' : '';
+
+    var blockBadge = (!e.allDay && e.block) ? ' <span class="cal-entry-badge" style="background:#f5f0ff;color:#6b5b95">Block ' + escapeHtml(e.block) + '</span>' : '';
+
+    card.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">'
+      + '<div class="cal-entry-title">' + escapeHtml(e.title) + '</div>' + badge + lBadge + blockBadge + '</div>'
+      + (e.desc ? '<div class="cal-entry-desc">' + escapeHtml(e.desc) + '</div>' : '')
+      + '<button class="cal-entry-delete" title="Löschen" onclick="deleteCalEntry(\'' + e.id + '\',\'' + e.source + '\')">&times;</button>';
+
+    list.appendChild(card);
+  });
+}
+
+function escapeHtml(str) {
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function setCalType(type) {
+  calType = type;
+  document.getElementById('calTypePersonal').className = 'cal-tab' + (type === 'personal' ? ' active' : '');
+  document.getElementById('calTypeGlobal').className   = 'cal-tab' + (type === 'global' ? ' active' : '');
+  // In admin mode, auto-fill pw and hide the pw field
+  if (adminMode && type === 'global') {
+    document.getElementById('calAdminPw').value = getAdminPw();
+    document.getElementById('calAdminPwRow').style.display = 'none';
+  } else {
+    document.getElementById('calAdminPwRow').style.display = type === 'global' ? '' : 'none';
+  }
+  document.getElementById('calLHint').style.display = type === 'global' ? '' : 'none';
+  calSelectedColor = type === 'global' ? '#e8401a' : '#4a90d9';
+  renderCalColorPicker();
+}
+
+function renderCalColorPicker() {
+  var container = document.getElementById('calColorPicker');
+  container.innerHTML = '';
+  CAL_COLORS.forEach(function(c) {
+    var swatch = document.createElement('div');
+    swatch.style.cssText = 'width:28px;height:28px;border-radius:50%;cursor:pointer;border:2.5px solid ' + (calSelectedColor === c.color ? 'var(--ink)' : 'transparent') + ';background:' + c.color + ';transition:border-color 0.15s;';
+    swatch.title = c.label;
+    swatch.onclick = function() {
+      calSelectedColor = c.color;
+      renderCalColorPicker();
+    };
+    container.appendChild(swatch);
+  });
+}
+
+let calAllDay = true;
+let calBlock = '1';
+
+function toggleCalAllDay() {
+  calAllDay = document.getElementById('calAllDay').checked;
+  var track = document.getElementById('calAllDayTrack');
+  var knob  = document.getElementById('calAllDayKnob');
+  if (calAllDay) {
+    track.style.background = 'var(--free)';
+    knob.style.left = '20px';
+  } else {
+    track.style.background = 'var(--border)';
+    knob.style.left = '2px';
+  }
+  document.getElementById('calBlockRow').style.display = calAllDay ? 'none' : '';
+}
+
+function setCalBlock(b) {
+  calBlock = b;
+  var chips = document.querySelectorAll('#calBlockPicker .cal-tab');
+  chips.forEach(function(c) {
+    c.className = 'cal-tab' + (c.dataset.block === b ? ' active' : '');
+  });
+}
+
+function openCalModal(prefillDate) {
+  calEditId = null;
+  document.getElementById('calModalTitle').textContent = 'Eintrag hinzufügen';
+  document.getElementById('calTitle').value = '';
+  document.getElementById('calDesc').value  = '';
+  document.getElementById('calAdminPw').value = adminMode ? getAdminPw() : '';
+  document.getElementById('calError').style.display = 'none';
+
+  // Show/hide global option based on admin mode
+  document.getElementById('calTypeGlobal').style.display = adminMode ? '' : 'none';
+
+  var dateVal = prefillDate || calSelectedDay || new Date().toISOString().slice(0,10);
+  document.getElementById('calDate').value = dateVal;
+
+  // Reset allDay/block
+  calAllDay = true;
+  calBlock = '1';
+  document.getElementById('calAllDay').checked = true;
+  document.getElementById('calAllDayTrack').style.background = 'var(--free)';
+  document.getElementById('calAllDayKnob').style.left = '20px';
+  document.getElementById('calBlockRow').style.display = 'none';
+  setCalBlock('1');
+
+  setCalType('personal');
+  renderCalColorPicker();
+
+  var overlay = document.getElementById('calModalOverlay');
+  var panel   = document.getElementById('calModalPanel');
+  overlay.style.display = '';
+  panel.style.display = '';
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+    overlay.style.opacity = '1';
+    panel.style.transform = 'translateY(0)';
+  }); });
+}
+
+function closeCalModal() {
+  var overlay = document.getElementById('calModalOverlay');
+  var panel   = document.getElementById('calModalPanel');
+  overlay.style.opacity = '0';
+  panel.style.transform = 'translateY(100%)';
+  setTimeout(function() { overlay.style.display = 'none'; panel.style.display = 'none'; }, 320);
+}
+
+async function saveCalEntry() {
+  var title = document.getElementById('calTitle').value.trim();
+  var date  = document.getElementById('calDate').value;
+  var desc  = document.getElementById('calDesc').value.trim();
+  var errEl = document.getElementById('calError');
+
+  if (!title) { errEl.textContent = 'Bitte Titel eingeben.'; errEl.style.display = ''; return; }
+  if (!date)  { errEl.textContent = 'Bitte Datum wählen.'; errEl.style.display = ''; return; }
+  errEl.style.display = 'none';
+
+  var entryData = {
+    date: date, title: title, desc: desc, color: calSelectedColor,
+    allDay: calAllDay, block: calAllDay ? null : calBlock
+  };
+
+  var btn = document.getElementById('calSaveBtn');
+  btn.textContent = 'Speichern…';
+  btn.style.opacity = '0.6';
+
+  try {
+    if (calType === 'global') {
+      var pw = document.getElementById('calAdminPw').value;
+      entryData.admin_pw = pw;
+      entryData.id = calEditId;
+      var res = await fetch('/api/kalender/global', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(entryData)
+      });
+      var data = await res.json();
+      if (!data.ok) { errEl.textContent = data.error || 'Fehler'; errEl.style.display = ''; btn.textContent = 'Speichern'; btn.style.opacity = '1'; return; }
+    } else {
+      entryData.uid = getUserId();
+      entryData.id = calEditId;
+      var res = await fetch('/api/kalender/persoenlich', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(entryData)
+      });
+      var data = await res.json();
+      if (!data.ok) { errEl.textContent = data.error || 'Fehler'; errEl.style.display = ''; btn.textContent = 'Speichern'; btn.style.opacity = '1'; return; }
+    }
+
+    btn.textContent = '✓ Gespeichert';
+    btn.style.background = 'var(--free)';
+    calSelectedDay = date;
+    await loadCalendar();
+    // Refresh day grid to show block events
+    buildDayGrid();
+    setTimeout(function() {
+      closeCalModal();
+      btn.textContent = 'Speichern';
+      btn.style.opacity = '1';
+      btn.style.background = 'var(--ink)';
+    }, 600);
+  } catch(e) {
+    errEl.textContent = 'Netzwerkfehler: ' + e.message;
+    errEl.style.display = '';
+    btn.textContent = 'Speichern';
+    btn.style.opacity = '1';
+  }
+}
+
+async function deleteCalEntry(id, source) {
+  if (!confirm('Eintrag wirklich löschen?')) return;
+  try {
+    if (source === 'schule') {
+      var pw = adminMode ? getAdminPw() : prompt('Admin-Passwort zum Löschen:');
+      if (!pw) return;
+      await fetch('/api/kalender/global/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ admin_pw: pw, id: id })
+      });
+    } else {
+      await fetch('/api/kalender/persoenlich/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ uid: getUserId(), id: id })
+      });
+    }
+    await loadCalendar();
+    buildDayGrid(); // Refresh timetable too
+  } catch(e) { alert('Fehler: ' + e.message); }
+}
+
+// ── L-Nummern Admin ──────────────────────────
+let lnData = {}; // { "12": { "Mo-745": "L11", ... }, "13": { ... } }
+let lnJahrgang = '12';
+
+const LN_TAGE = ['Mo','Di','Mi','Do','Fr'];
+const LN_SLOTS_NORMAL = [
+  { label: 'Block 1', start: 745 },
+  { label: 'Block 2', start: 935 },
+  { label: 'Block 3.1', start: 1125 },
+  { label: 'Block 3.2', start: 1215 },
+  { label: 'Block 4', start: 1345 },
+  { label: 'Block 5', start: 1530 },
+];
+const LN_SLOTS_DO = [
+  { label: 'Block 1', start: 835 },
+  { label: 'Block 2', start: 1025 },
+  { label: 'Block 3.1', start: 1215 },
+  { label: 'Block 3.2', start: 1305 },
+  { label: 'Block 4', start: 1420 },
+  { label: 'Block 5', start: 1620 },
+];
+
+async function loadLNummern() {
+  try {
+    var res = await fetch('/api/l_nummern');
+    var d   = await res.json();
+    if (d.ok) lnData = d.data || {};
+  } catch(e) { lnData = {}; }
+}
+
+function openLNummernPanel() {
+  if (!adminMode) return;
+  openAdminPanel('ln');
+}
+
+function closeLNummernPanel() {
+  closeAdminPanel();
+}
+
+function setLNJahrgang(jg) {
+  lnJahrgang = jg;
+  var t12 = document.getElementById('lnTab12');
+  var t13 = document.getElementById('lnTab13');
+  if (jg === '12') {
+    t12.style.background = '#3a3834'; t12.style.borderColor = '#a09a90'; t12.style.color = 'white';
+    t13.style.background = ''; t13.style.borderColor = ''; t13.style.color = '';
+  } else {
+    t13.style.background = '#3a3834'; t13.style.borderColor = '#a09a90'; t13.style.color = 'white';
+    t12.style.background = ''; t12.style.borderColor = ''; t12.style.color = '';
+  }
+  renderLNGrid();
+}
+
+function renderLNGrid() {
+  var grid = document.getElementById('lnGrid');
+  grid.innerHTML = '';
+  var jgMap = lnData[lnJahrgang] || {};
+
+  LN_TAGE.forEach(function(tag) {
+    var slots = (tag === 'Do') ? LN_SLOTS_DO : LN_SLOTS_NORMAL;
+
+    var tagHeader = document.createElement('div');
+    tagHeader.style.cssText = 'font-weight:800;font-size:0.82rem;margin-top:0.5rem;margin-bottom:0.2rem;color:#e8e4dc;';
+    tagHeader.textContent = tag;
+    grid.appendChild(tagHeader);
+
+    slots.forEach(function(slot) {
+      var key = tag + '-' + slot.start;
+      var val = jgMap[key] || '';
+
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
+
+      var label = document.createElement('div');
+      label.style.cssText = 'font-family:"Syne Mono",monospace;font-size:0.68rem;color:#a09a90;width:70px;flex-shrink:0;';
+      label.textContent = slot.label;
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.value = val;
+      input.placeholder = 'z.B. L11';
+      input.maxLength = 10;
+      input.dataset.key = key;
+      input.style.cssText = 'flex:1;padding:0.3rem 0.5rem;background:#2a2824;border:1.5px solid #3a3834;border-radius:5px;font-family:"Syne Mono",monospace;font-size:0.78rem;outline:none;max-width:100px;color:#e8e4dc;';
+      input.onfocus = function(){ this.style.borderColor = '#a09a90'; };
+      input.onblur = function(){ this.style.borderColor = '#3a3834'; };
+
+      row.appendChild(label);
+      row.appendChild(input);
+      grid.appendChild(row);
+    });
+  });
+}
+
+async function saveLNummern() {
+  var inputs = document.querySelectorAll('#lnGrid input[data-key]');
+  var jgMap = {};
+  inputs.forEach(function(inp) {
+    var val = inp.value.trim().toUpperCase();
+    if (val) {
+      if (/^\d+$/.test(val)) val = 'L' + val.padStart(2, '0');
+      jgMap[inp.dataset.key] = val;
+    }
+  });
+
+  var fullData = Object.assign({}, lnData);
+  fullData[lnJahrgang] = jgMap;
+
+  var pw = getAdminPw();
+  var errEl = document.getElementById('lnError');
+  var btn = document.getElementById('lnSaveBtn');
+
+  try {
+    var res = await fetch('/api/l_nummern', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ admin_pw: pw, mapping: fullData })
+    });
+    var d = await res.json();
+    if (!d.ok) { errEl.textContent = d.error || 'Fehler'; errEl.style.display = ''; return; }
+    errEl.style.display = 'none';
+    lnData = fullData;
+    btn.textContent = '✓ Gespeichert';
+    btn.style.background = 'var(--free)';
+    setTimeout(function(){ btn.textContent = 'L-Nummern speichern'; btn.style.background = 'var(--accent)'; }, 1200);
+  } catch(e) {
+    errEl.textContent = 'Fehler: ' + e.message; errEl.style.display = '';
+  }
+}
+
+function init() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const wd = today.getDay();
+  if (wd === 6) { dayOffset = 2; }
+  else if (wd === 0) { dayOffset = 1; }
+
+  // Restore admin mode from session
+  if (sessionStorage.getItem('roomtis_admin') === 'true') {
+    adminMode = true;
+  }
+
+  // Verstecke planTimetable bis Klasse geladen
+  if (!meineKlasse) document.getElementById('planTimetable').style.display = 'none';
+
+  initKlassenTab();
+
+  async function initWithPlanData() {
+    if (meineKlasse) {
+      if (isOberstufe(meineKlasse)) {
+        await loadFaecherFromServer();
+        var jg = meineKlasse.replace(/[a-z]/g, '');
+        planMonday = getMondayOfCurrentWeek();
+        var fri = new Date(planMonday); fri.setDate(planMonday.getDate() + 11);
+        try {
+          var res  = await fetch('/api/stundenplan?jahrgang=' + jg + '&start=' + dateToInt(planMonday) + '&end=' + dateToInt(fri));
+          var data = await res.json();
+          if (data.ok) {
+            planStunden = {};
+            data.stunden.forEach(function(e) {
+              var key = e.date + '-' + e.startTime;
+              if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
+              planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
+            });
+          }
+        } catch(e) {}
+      } else {
+        var monday = getMondayOfCurrentWeek();
+        var fri2 = new Date(monday); fri2.setDate(monday.getDate() + 11);
+        try {
+          var res2  = await fetch('/api/stundenplan_klasse?klasse=' + encodeURIComponent(meineKlasse) + '&start=' + dateToInt(monday) + '&end=' + dateToInt(fri2));
+          var data2 = await res2.json();
+          if (data2.ok) {
+            planStunden = {};
+            meineFaecher = {};
+            planMonday = monday;
+            (data2.stunden || []).forEach(function(e) {
+              var key = e.date + '-' + e.startTime;
+              if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
+              var already = planStunden[key].subjects.find(function(s){ return s.name === e.subject.name; });
+              if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
+            });
+            // Load saved selections
+            await loadFaecherFromServer();
+            // Auto-select only for single-subject slots
+            Object.keys(planStunden).forEach(function(k) {
+              if (planStunden[k].subjects.length === 1) meineFaecher[k] = planStunden[k].subjects[0].name;
+            });
+          }
+        } catch(e) {}
+      }
+    }
+
+    // planTimetable anzeigen falls Klasse gewählt
+    if (meineKlasse) {
+      document.getElementById('klasseWahl').style.display = 'none';
+      document.getElementById('gewaehlteKlasse').style.display = '';
+      document.getElementById('klasseLabel').textContent = meineKlasse;
+      document.getElementById('planTimetable').style.removeProperty('display');
+      if (isOberstufe(meineKlasse)) {
+        planModus = 'auswahl';
+        planDayOffset = 0; // Monday
+        document.getElementById('saveBtn').style.display = '';
+        document.getElementById('modusBtn').style.display = 'none';
+        document.getElementById('planTitle').textContent = meineKlasse + ' – Kurse auswählen';
+      } else {
+        planModus = 'ansicht';
+        planDayOffset = 0;
+        // Show save button if there are multi-subject slots to choose from
+        var hasMultiInit = Object.keys(planStunden).some(function(k) { return planStunden[k].subjects.length > 1; });
+        document.getElementById('saveBtn').style.display = hasMultiInit ? '' : 'none';
+        document.getElementById('modusBtn').style.display = 'none';
+        document.getElementById('planTitle').textContent = meineKlasse + ' – Stundenplan';
+      }
+      buildPlanDayGrid();
+    }
+
+    // Load calendar data so events show in timetable
+    await loadCalendar();
+    // Load AG timetables
+    await loadAGStunden();
+
+    buildDayGrid();
+
+    const weekday = new Date().getDay();
+    const stunde  = getCurrentStunde();
+
+    if (stunde && weekday >= 1 && weekday <= 5) {
+      loadForCell(new Date(), stunde);
+    } else {
+      document.getElementById('freeTitle').textContent  = 'Kein Unterricht';
+      document.getElementById('freePill').textContent   = '';
+      document.getElementById('roomsContainer').innerHTML =
+        '<div class="no-class">Gerade kein Unterricht.</div>';
+    }
+  }
+
+  initWithPlanData();
+}
+
+init();
+</script>
+</body>
+</html>
