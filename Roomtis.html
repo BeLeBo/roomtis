@@ -2662,6 +2662,21 @@ function selectFachPlan(el, slotKey, subjName) {
     el.style.borderColor   = 'var(--free-border)';
     el.style.color         = 'var(--free)';
   }
+  // Auto-save to server
+  _debouncedSaveFaecher();
+}
+
+var _saveTimer = null;
+function _debouncedSaveFaecher() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(function() {
+    fetch('/api/faecher/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ uid: getUserId(), klasse: meineKlasse || '', faecher: meineFaecher })
+    }).catch(function(e) { console.log('Save error:', e); });
+    localStorage.setItem('roomtis_faecher', JSON.stringify({ klasse: meineKlasse, faecher: meineFaecher }));
+  }, 500);
 }
 
 function faecherSpeichernOberstufe(event) {
@@ -2670,7 +2685,9 @@ function faecherSpeichernOberstufe(event) {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ uid: getUserId(), klasse: meineKlasse || '', faecher: meineFaecher })
-  });
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    console.log('Saved:', d);
+  }).catch(function(e) { console.log('Save error:', e); });
   // One entry in localStorage too
   localStorage.setItem('roomtis_faecher', JSON.stringify({ klasse: meineKlasse, faecher: meineFaecher }));
   var btn = event.target;
