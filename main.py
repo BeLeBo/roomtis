@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory, make_response
 import requests
 import re
 import os
+import json
 
 app = Flask(__name__)
 
@@ -19,12 +20,79 @@ AUSGESCHLOSSENE_RAEUME = [
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Teacher ID -> Kürzel mapping (filled via /lehrer page)
+# ── Database Setup (Turso Cloud or local SQLite fallback) ──
+TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
+TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
+
+if TURSO_URL:
+    import libsql_client
+    _db_client = libsql_client.create_client_sync(
+        url=TURSO_URL,
+        auth_token=TURSO_TOKEN
+    )
+    _db_client.execute(
+        "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+    )
+
+    def db_get(key):
+        rs = _db_client.execute("SELECT value FROM kv WHERE key=?", [key])
+        return json.loads(rs.rows[0][0]) if rs.rows else None
+
+    def db_set(key, value):
+        _db_client.execute(
+            "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+            [key, json.dumps(value, ensure_ascii=False)]
+        )
+
+    def db_delete(key):
+        _db_client.execute("DELETE FROM kv WHERE key=?", [key])
+
+    print("[DB] Connected to Turso Cloud")
+else:
+    import sqlite3
+    DB_PATH = os.path.join(BASE_DIR, "roomtis.db")
+
+    def get_db():
+        db = sqlite3.connect(DB_PATH)
+        db.execute("PRAGMA journal_mode=WAL")
+        return db
+
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    db.commit()
+    db.close()
+
+    def db_get(key):
+        db = get_db()
+        row = db.execute("SELECT value FROM kv WHERE key=?", (key,)).fetchone()
+        db.close()
+        return json.loads(row[0]) if row else None
+
+    def db_set(key, value):
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+                   (key, json.dumps(value, ensure_ascii=False)))
+        db.commit()
+        db.close()
+
+    def db_delete(key):
+        db = get_db()
+        db.execute("DELETE FROM kv WHERE key=?", (key,))
+        db.commit()
+        db.close()
+
+    print("[DB] Using local SQLite:", DB_PATH)
+
+# ── Teacher Map ───────────────────────────────
 def load_teacher_map():
+    data = db_get("teacher_map")
+    if data:
+        return data
     try:
-        import json
         with open(os.path.join(BASE_DIR, "teacher_map.json")) as f:
-            return json.load(f)
+            data = json.load(f)
+            db_set("teacher_map", data)
+            return data
     except Exception:
         return {}
 
@@ -32,10 +100,31 @@ TEACHER_MAP = load_teacher_map()
 
 @app.route("/")
 def index():
-    resp = make_response(send_from_directory(BASE_DIR, "Roomtis.html"))
+    html_path = os.path.join(BASE_DIR, "Roomtis.html")
+    if not os.path.exists(html_path):
+        cwd = os.getcwd()
+        html_path2 = os.path.join(cwd, "Roomtis.html")
+        if os.path.exists(html_path2):
+            resp = make_response(send_from_directory(cwd, "Roomtis.html"))
+        else:
+            return f"Roomtis.html nicht gefunden.<br>BASE_DIR={BASE_DIR}<br>CWD={cwd}<br>Dateien: {os.listdir(cwd)}", 404
+    else:
+        resp = make_response(send_from_directory(BASE_DIR, "Roomtis.html"))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     resp.headers["Pragma"] = "no-cache"
     return resp
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(os.path.join(BASE_DIR, "images"), "favicon.ico", mimetype="image/x-icon")
+
+@app.route("/apple-touch-icon.png")
+def apple_touch_icon():
+    return send_from_directory(os.path.join(BASE_DIR, "images"), "apple-touch-icon.png", mimetype="image/png")
+
+@app.route("/icon-192.png")
+def icon_192():
+    return send_from_directory(os.path.join(BASE_DIR, "images"), "icon-192.png", mimetype="image/png")
 
 @app.route("/api/freie-raeume")
 def freie_raeume():
@@ -247,10 +336,8 @@ def stundenplan():
 
 @app.route("/api/lehrer_save", methods=["POST"])
 def lehrer_save():
-    import json as _json
     data = request.get_json()
-    with open("teacher_map.json", "w") as f:
-        _json.dump(data, f, indent=2)
+    db_set("teacher_map", data)
     global TEACHER_MAP
     TEACHER_MAP = data
     return jsonify({"ok": True})
@@ -526,59 +613,44 @@ def ag_stundenplan():
 
 @app.route("/api/faecher/load")
 def faecher_load():
-    import json
     user_id = request.args.get("uid", "")
     klasse  = request.args.get("klasse", "")
     if not user_id:
         return jsonify({"ok": False, "error": "no uid"}), 400
-    path = os.path.join(BASE_DIR, "faecher", user_id + ".json")
-    try:
-        with open(path, encoding="utf-8") as f:
-            saved = json.load(f)
-        # Only return faecher if saved klasse matches requested klasse
-        if saved.get("klasse") == klasse:
-            return jsonify({"ok": True, "faecher": saved.get("faecher", {}), "klasse": klasse})
-        else:
-            return jsonify({"ok": True, "faecher": {}, "klasse": klasse})
-    except FileNotFoundError:
-        return jsonify({"ok": True, "faecher": {}})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+    saved = db_get(f"faecher:{user_id}")
+    if saved and saved.get("klasse") == klasse:
+        return jsonify({"ok": True, "faecher": saved.get("faecher", {}), "klasse": klasse})
+    return jsonify({"ok": True, "faecher": {}})
 
 @app.route("/api/faecher/save", methods=["POST"])
 def faecher_save():
-    import json, re
     data    = request.get_json()
     user_id = data.get("uid", "")
     klasse  = data.get("klasse", "")
     faecher = data.get("faecher", {})
     if not user_id or not re.match(r'^[a-zA-Z0-9-]{8,64}$', user_id):
         return jsonify({"ok": False, "error": "invalid uid"}), 400
-    folder = os.path.join(BASE_DIR, "faecher")
-    os.makedirs(folder, exist_ok=True)
-    # One file per user - always overwrites, klasse stored inside
-    path = os.path.join(folder, user_id + ".json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump({"klasse": klasse, "faecher": faecher}, f)
+    db_set(f"faecher:{user_id}", {"klasse": klasse, "faecher": faecher})
     return jsonify({"ok": True})
 
 # ── L-Nummern Mapping ─────────────────────────────────────
 import datetime as _dt
 
 def load_l_nummern():
-    import json
-    path = os.path.join(BASE_DIR, "l_nummern.json")
+    data = db_get("l_nummern")
+    if data:
+        return data
+    # Fallback: try JSON file and migrate
     try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
+        with open(os.path.join(BASE_DIR, "l_nummern.json"), encoding="utf-8") as f:
+            data = json.load(f)
+            db_set("l_nummern", data)
+            return data
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 def save_l_nummern(data):
-    import json
-    path = os.path.join(BASE_DIR, "l_nummern.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    db_set("l_nummern", data)
 
 L_NUMMERN = load_l_nummern()
 
@@ -611,25 +683,16 @@ def l_nummern_api():
     return jsonify({"ok": True})
 
 # ── Kalender ──────────────────────────────────────────────
-KALENDER_DIR = os.path.join(BASE_DIR, "kalender")
-os.makedirs(KALENDER_DIR, exist_ok=True)
-
 ADMIN_PASSWORD = "roomtis2026"
 
 def _load_calendar(filename):
-    import json
-    path = os.path.join(KALENDER_DIR, filename)
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
+    key = f"calendar:{filename}"
+    data = db_get(key)
+    return data if data else []
 
 def _save_calendar(filename, entries):
-    import json
-    path = os.path.join(KALENDER_DIR, filename)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(entries, f, ensure_ascii=False, indent=2)
+    key = f"calendar:{filename}"
+    db_set(key, entries)
 
 @app.route("/api/kalender/global", methods=["GET", "POST"])
 def kalender_global():
