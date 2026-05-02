@@ -68,10 +68,14 @@ def db_get(key):
         return json.loads(rs.rows[0][0]) if rs.rows else None
     else:
         import sqlite3
-        db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
-        row = db.execute("SELECT value FROM kv WHERE key=?", (key,)).fetchone()
-        db.close()
-        return json.loads(row[0]) if row else None
+        try:
+            db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
+            row = db.execute("SELECT value FROM kv WHERE key=?", (key,)).fetchone()
+            db.close()
+            return json.loads(row[0]) if row else None
+        except Exception as e:
+            print(f"[DB ERROR] db_get({key}): {e}")
+            return None
 
 def db_set(key, value):
     if _db_mode == "turso" and _db_client:
@@ -81,21 +85,27 @@ def db_set(key, value):
         )
     else:
         import sqlite3
-        db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
-        db.execute("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
-                   (key, json.dumps(value, ensure_ascii=False)))
-        db.commit()
-        db.close()
+        try:
+            db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
+            db.execute("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+                       (key, json.dumps(value, ensure_ascii=False)))
+            db.commit()
+            db.close()
+        except Exception as e:
+            print(f"[DB ERROR] db_set({key}): {e}")
 
 def db_delete(key):
     if _db_mode == "turso" and _db_client:
         _db_client.execute("DELETE FROM kv WHERE key=?", [key])
     else:
         import sqlite3
-        db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
-        db.execute("DELETE FROM kv WHERE key=?", (key,))
-        db.commit()
-        db.close()
+        try:
+            db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
+            db.execute("DELETE FROM kv WHERE key=?", (key,))
+            db.commit()
+            db.close()
+        except Exception as e:
+            print(f"[DB ERROR] db_delete({key}): {e}")
 
 # ── Teacher Map ───────────────────────────────
 def load_teacher_map():
@@ -631,9 +641,12 @@ def faecher_load():
     klasse  = request.args.get("klasse", "")
     if not user_id:
         return jsonify({"ok": False, "error": "no uid"}), 400
-    saved = db_get(f"faecher:{user_id}")
-    if saved and saved.get("klasse") == klasse:
-        return jsonify({"ok": True, "faecher": saved.get("faecher", {}), "klasse": klasse})
+    try:
+        saved = db_get(f"faecher:{user_id}")
+        if saved and saved.get("klasse") == klasse:
+            return jsonify({"ok": True, "faecher": saved.get("faecher", {}), "klasse": klasse})
+    except Exception as e:
+        print(f"[ERROR] faecher_load: {e}")
     return jsonify({"ok": True, "faecher": {}})
 
 @app.route("/api/faecher/save", methods=["POST"])
