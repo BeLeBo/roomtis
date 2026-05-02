@@ -259,6 +259,17 @@ body {
   .day-cell { min-height: 40px; }
   .stunden-sep { display: none; }
   .block-divider { gap: 2px; }
+  /* Plan tab: make cells expand and chips stack */
+  .plan-chips-cell {
+    height: auto !important;
+    min-height: 40px !important;
+  }
+  .plan-chip {
+    font-size: 0.6rem !important;
+    padding: 0.15rem 0.3rem !important;
+  }
+  .plan-chip .chip-name { font-size: 0.6rem !important; }
+  .plan-chip .chip-detail { font-size: 0.4rem !important; }
 }
 
 @keyframes fadeSlideIn {
@@ -2399,7 +2410,7 @@ function buildPlanDayGrid() {
       pLbl.innerHTML = '<strong style="color:var(--muted)">Pause</strong><span>' + pauseLabel + '</span>';
       var pCell = document.createElement('div');
       pCell.className = 'day-cell' + (isPauseCur ? ' is-current' : '') + (isPausePast && !isPauseCur ? ' is-past' : '');
-      pCell.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:3px;padding:4px;align-items:start;cursor:default;';
+      pCell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-content:center;cursor:default;';
 
       // Show subjects scheduled during Mittagspause
       // The gap is between Block 3.2 end and Block 4 start.
@@ -2490,8 +2501,8 @@ function buildPlanDayGrid() {
         var subCell = document.createElement('div');
         var isPast    = date < today || (isToday && nowTime >= stunde.end);
         var isCurrent = isToday && stunde.start <= nowTime && nowTime < stunde.end;
-        subCell.className = 'day-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
-        subCell.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:3px;padding:4px;align-items:start;cursor:default;';
+        subCell.className = 'day-cell plan-chips-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
+        subCell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-content:center;cursor:default;';
 
         var dateInt = effectiveDateInt;
         var slot = null, slotKey = null;
@@ -2509,6 +2520,7 @@ function buildPlanDayGrid() {
             if (!canSelect && !selected) return;
             var showGreen2 = canSelect && selected;
             var chip = document.createElement('div');
+            chip.className = 'plan-chip';
             chip.dataset.slot = slotKey;
             chip.dataset.fach = subj.name;
             chip.style.cssText = [
@@ -2518,12 +2530,12 @@ function buildPlanDayGrid() {
               'border-radius:5px','padding:0.2rem 0.35rem',
               canSelect ? 'cursor:pointer' : 'cursor:default',
               'display:flex','flex-direction:column','align-items:center',
-              'transition:all 0.15s','min-width:0',
+              'transition:all 0.15s',
             ].filter(Boolean).join(';');
             var teachStr2 = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
-            chip.innerHTML = '<div style="font-weight:800;font-size:0.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + subj.name + '</div>'
-              + (teachStr2 ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + teachStr2 + '</div>' : '')
-              + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '');
+            chip.innerHTML = '<div class="chip-name" style="font-weight:800;font-size:0.7rem;white-space:nowrap">' + subj.name + '</div>'
+              + (teachStr2 ? '<div class="chip-detail" style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + teachStr2 + '</div>' : '')
+              + (subj.room ? '<div class="chip-detail" style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '');
             if (canSelect) chip.onclick = function() { selectFachPlan(chip, slotKey, subj.name); };
             subCell.appendChild(chip);
           });
@@ -2549,8 +2561,8 @@ function buildPlanDayGrid() {
     var cell = document.createElement('div');
     var isPast    = date < today || (isToday && nowTime >= s1.end);
     var isCurrent = isToday && s0.start <= nowTime && nowTime < s1.end;
-    cell.className = 'day-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
-    cell.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:3px;padding:4px;align-items:start;cursor:default;';
+    cell.className = 'day-cell plan-chips-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
+    cell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-content:center;cursor:default;';
 
     // Collect subjects for both Stunden in this block
     block.stunden.forEach(function(stunde) {
@@ -2578,6 +2590,7 @@ function buildPlanDayGrid() {
           if (!canSelect2 && !selected) return;
           var showGreen3 = canSelect2 && selected;
           var chip = document.createElement('div');
+          chip.className = 'plan-chip';
           chip.dataset.slot = slotKey;
           chip.dataset.fach = subj.name;
           chip.style.cssText = [
@@ -2587,12 +2600,12 @@ function buildPlanDayGrid() {
             'border-radius:5px','padding:0.2rem 0.35rem',
             canSelect2 ? 'cursor:pointer' : 'cursor:default',
             'display:flex','flex-direction:column','align-items:center',
-            'transition:all 0.15s','min-width:0',
+            'transition:all 0.15s',
           ].filter(Boolean).join(';');
           var teachStr = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
-          chip.innerHTML = '<div style="font-weight:800;font-size:0.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + subj.name + '</div>'
-            + (teachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + teachStr + '</div>' : '')
-            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '');
+          chip.innerHTML = '<div class="chip-name" style="font-weight:800;font-size:0.7rem;white-space:nowrap">' + subj.name + '</div>'
+            + (teachStr ? '<div class="chip-detail" style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + teachStr + '</div>' : '')
+            + (subj.room ? '<div class="chip-detail" style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '');
           if (canSelect2) chip.onclick = function() { selectFachPlan(chip, slotKey, subj.name); };
           cell.appendChild(chip);
         });
