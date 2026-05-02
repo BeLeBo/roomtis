@@ -218,6 +218,7 @@ body {
   display: grid;
   grid-template-columns: 90px 1fr;
   gap: 3px;
+  align-items: stretch;
 }
 
 .row-label {
@@ -238,23 +239,26 @@ body {
   background: white;
   border: 1.5px solid var(--border);
   border-radius: 5px;
-  min-height: 52px;
+  min-height: 48px;
   cursor: pointer;
   transition: all 0.15s;
   box-sizing: border-box;
+  overflow: visible;
 }
 .day-cell:hover { border-color: var(--ink); background: #f0ece4; }
 .day-cell.is-active { background: var(--active-bg); border-color: var(--active-border); border-width: 2.5px; }
 .day-cell.is-current { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .day-cell.is-past { opacity: 0.35; pointer-events: none; }
 
-/* Mobile: plan chips layout */
+/* Mobile responsive */
 @media (max-width: 480px) {
-  .day-row { grid-template-columns: 60px 1fr; gap: 2px; }
-  .row-label { font-size: 0.52rem; padding-right: 0.3rem; }
-  .row-label strong { font-size: 0.58rem; }
-  .block-name { font-size: 0.52rem; }
+  .day-row { grid-template-columns: 55px 1fr; gap: 2px; }
+  .row-label { font-size: 0.48rem; padding-right: 0.25rem; }
+  .row-label strong { font-size: 0.52rem; }
+  .block-name { font-size: 0.48rem; padding: 0 0.25rem 0 0; }
+  .day-cell { min-height: 40px; }
   .stunden-sep { display: none; }
+  .block-divider { gap: 2px; }
 }
 
 @keyframes fadeSlideIn {
@@ -2395,7 +2399,7 @@ function buildPlanDayGrid() {
       pLbl.innerHTML = '<strong style="color:var(--muted)">Pause</strong><span>' + pauseLabel + '</span>';
       var pCell = document.createElement('div');
       pCell.className = 'day-cell' + (isPauseCur ? ' is-current' : '') + (isPausePast && !isPauseCur ? ' is-past' : '');
-      pCell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-items:center;cursor:default;min-height:36px;';
+      pCell.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:3px;padding:4px;align-items:start;cursor:default;';
 
       // Show subjects scheduled during Mittagspause
       // The gap is between Block 3.2 end and Block 4 start.
@@ -2487,7 +2491,7 @@ function buildPlanDayGrid() {
         var isPast    = date < today || (isToday && nowTime >= stunde.end);
         var isCurrent = isToday && stunde.start <= nowTime && nowTime < stunde.end;
         subCell.className = 'day-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
-        subCell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-items:center;cursor:default;min-height:48px;';
+        subCell.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:3px;padding:4px;align-items:start;cursor:default;';
 
         var dateInt = effectiveDateInt;
         var slot = null, slotKey = null;
@@ -2546,7 +2550,7 @@ function buildPlanDayGrid() {
     var isPast    = date < today || (isToday && nowTime >= s1.end);
     var isCurrent = isToday && s0.start <= nowTime && nowTime < s1.end;
     cell.className = 'day-cell' + (isCurrent ? ' is-current' : '') + (isPast && !isCurrent && planModus === 'ansicht' ? ' is-past' : '');
-    cell.style.cssText = 'display:flex;flex-direction:row;flex-wrap:wrap;gap:3px;padding:4px;align-items:center;cursor:default;min-height:48px;';
+    cell.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:3px;padding:4px;align-items:start;cursor:default;';
 
     // Collect subjects for both Stunden in this block
     block.stunden.forEach(function(stunde) {
