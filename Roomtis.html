@@ -525,7 +525,7 @@ body {
 <body>
 
 <div class="topbar">
-  <div class="logo">room<span>tis</span></div>
+  <div class="logo" onclick="switchTab('free')" style="cursor:pointer">room<span>tis</span></div>
   <div style="display:flex;align-items:center;gap:0.5rem">
     <!-- Drei-Punkte Menü -->
     <div style="position:relative">
@@ -556,7 +556,7 @@ body {
           color:#1a1814;border-bottom:1px solid var(--border);
         " onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
-          Mein Stundenplan
+          Stundenplan Auswahl
         </div>
         <div onclick="switchTab('kalender');toggleMenu()" id="menuKalender" style="
           display:flex;align-items:center;gap:0.75rem;
