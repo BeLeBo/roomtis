@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>roomtis</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -235,7 +238,7 @@ body {
   background: white;
   border: 1.5px solid var(--border);
   border-radius: 5px;
-  height: 52px;
+  min-height: 52px;
   cursor: pointer;
   transition: all 0.15s;
   box-sizing: border-box;
@@ -244,6 +247,15 @@ body {
 .day-cell.is-active { background: var(--active-bg); border-color: var(--active-border); border-width: 2.5px; }
 .day-cell.is-current { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .day-cell.is-past { opacity: 0.35; pointer-events: none; }
+
+/* Mobile: plan chips layout */
+@media (max-width: 480px) {
+  .day-row { grid-template-columns: 60px 1fr; gap: 2px; }
+  .row-label { font-size: 0.52rem; padding-right: 0.3rem; }
+  .row-label strong { font-size: 0.58rem; }
+  .block-name { font-size: 0.52rem; }
+  .stunden-sep { display: none; }
+}
 
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateX(var(--slide-dir, 12px)); }
@@ -2426,17 +2438,17 @@ function buildPlanDayGrid() {
             'background:' + (showEntfall ? '#fdf5f5' : (showGreen2 ? 'var(--free-bg)' : 'white')),
             'border:1.5px solid ' + (showEntfall ? '#e0b0b0' : (showGreen2 ? 'var(--free-border)' : 'var(--border)')),
             'color:' + (showEntfall ? '#c07070' : (showGreen2 ? 'var(--free)' : 'var(--ink)')),
-            'border-radius:5px','padding:0.25rem 0.45rem',
+            'border-radius:5px','padding:0.2rem 0.35rem',
             planModus === 'auswahl' ? 'cursor:pointer' : 'cursor:default',
             'display:flex','flex-direction:column','align-items:center',
-            'transition:all 0.15s','flex-shrink:0',
+            'transition:all 0.15s','min-width:0',
             showEntfall ? 'text-decoration:line-through;opacity:0.7' : '',
           ].filter(Boolean).join(';');
           var pTeachStr = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
-          chip.innerHTML = '<div style="font-weight:800;font-size:0.75rem;white-space:nowrap">' + subj.name + '</div>'
-            + (pTeachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + pTeachStr + '</div>' : '')
-            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '')
-            + (showEntfall ? '<div style="font-size:0.5rem;color:#c07070;font-weight:700">Entfall</div>' : '');
+          chip.innerHTML = '<div style="font-weight:800;font-size:0.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + subj.name + '</div>'
+            + (pTeachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + pTeachStr + '</div>' : '')
+            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '')
+            + (showEntfall ? '<div style="font-size:0.45rem;color:#c07070;font-weight:700">Entfall</div>' : '');
           if (planModus === 'auswahl') {
             (function(c, sk, sn) {
               c.addEventListener('click', function(ev) { ev.stopPropagation(); selectFachPlan(c, sk, sn); });
@@ -2499,15 +2511,15 @@ function buildPlanDayGrid() {
               'background:' + (showGreen2 ? 'var(--free-bg)' : 'white'),
               'border:1.5px solid ' + (showGreen2 ? 'var(--free-border)' : 'var(--border)'),
               'color:' + (showGreen2 ? 'var(--free)' : 'var(--ink)'),
-              'border-radius:5px','padding:0.25rem 0.45rem',
+              'border-radius:5px','padding:0.2rem 0.35rem',
               canSelect ? 'cursor:pointer' : 'cursor:default',
               'display:flex','flex-direction:column','align-items:center',
-              'transition:all 0.15s','flex-shrink:0',
+              'transition:all 0.15s','min-width:0',
             ].filter(Boolean).join(';');
             var teachStr2 = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
-            chip.innerHTML = '<div style="font-weight:800;font-size:0.75rem;white-space:nowrap">' + subj.name + '</div>'
-              + (teachStr2 ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + teachStr2 + '</div>' : '')
-              + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '');
+            chip.innerHTML = '<div style="font-weight:800;font-size:0.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + subj.name + '</div>'
+              + (teachStr2 ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + teachStr2 + '</div>' : '')
+              + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '');
             if (canSelect) chip.onclick = function() { selectFachPlan(chip, slotKey, subj.name); };
             subCell.appendChild(chip);
           });
@@ -2551,7 +2563,8 @@ function buildPlanDayGrid() {
       if (slot && slot.subjects.length > 0) {
         if (cell.children.length > 0) {
           var sep = document.createElement('div');
-          sep.style.cssText = 'width:1px;height:24px;background:var(--border);flex-shrink:0;align-self:center;';
+          sep.className = 'stunden-sep';
+          sep.style.cssText = 'width:1px;height:20px;background:var(--border);flex-shrink:0;align-self:center;';
           cell.appendChild(sep);
         }
         var isMulti2 = slot.subjects.length > 1;
@@ -2567,15 +2580,15 @@ function buildPlanDayGrid() {
             'background:' + (showGreen3 ? 'var(--free-bg)' : 'white'),
             'border:1.5px solid ' + (showGreen3 ? 'var(--free-border)' : 'var(--border)'),
             'color:' + (showGreen3 ? 'var(--free)' : 'var(--ink)'),
-            'border-radius:5px','padding:0.25rem 0.45rem',
+            'border-radius:5px','padding:0.2rem 0.35rem',
             canSelect2 ? 'cursor:pointer' : 'cursor:default',
             'display:flex','flex-direction:column','align-items:center',
-            'transition:all 0.15s','flex-shrink:0',
+            'transition:all 0.15s','min-width:0',
           ].filter(Boolean).join(';');
           var teachStr = subj.teachers && subj.teachers.length > 0 ? subj.teachers.join(', ') : '';
-          chip.innerHTML = '<div style="font-weight:800;font-size:0.75rem;white-space:nowrap">' + subj.name + '</div>'
-            + (teachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + teachStr + '</div>' : '')
-            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.5rem;color:var(--muted)">' + subj.room + '</div>' : '');
+          chip.innerHTML = '<div style="font-weight:800;font-size:0.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + subj.name + '</div>'
+            + (teachStr ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + teachStr + '</div>' : '')
+            + (subj.room ? '<div style="font-family:Syne Mono,monospace;font-size:0.45rem;color:var(--muted)">' + subj.room + '</div>' : '');
           if (canSelect2) chip.onclick = function() { selectFachPlan(chip, slotKey, subj.name); };
           cell.appendChild(chip);
         });
