@@ -150,6 +150,28 @@ def apple_touch_icon():
 def icon_192():
     return send_from_directory(os.path.join(BASE_DIR, "images"), "icon-192.png", mimetype="image/png")
 
+@app.route("/api/dbstatus")
+def dbstatus():
+    try:
+        # Test write
+        db_set("_test", {"t": "ok"})
+        # Test read
+        val = db_get("_test")
+        # Count keys
+        if _db_mode == "turso" and _db_client:
+            rs = _db_client.execute("SELECT COUNT(*) FROM kv")
+            count = rs.rows[0][0] if rs.rows else 0
+        else:
+            import sqlite3
+            db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
+            count = db.execute("SELECT COUNT(*) FROM kv").fetchone()[0]
+            db.close()
+        # Clean up test
+        db_delete("_test")
+        return jsonify({"ok": True, "mode": _db_mode, "url": TURSO_URL[:30] + "..." if TURSO_URL else "none", "test_read": val, "total_keys": count})
+    except Exception as e:
+        return jsonify({"ok": False, "mode": _db_mode, "error": str(e)})
+
 @app.route("/api/freie-raeume")
 def freie_raeume():
     date_int   = int(request.args.get("date", "20260223"))
