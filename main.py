@@ -24,64 +24,78 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
-if TURSO_URL:
-    import libsql_client
-    _db_client = libsql_client.create_client_sync(
-        url=TURSO_URL,
-        auth_token=TURSO_TOKEN
-    )
-    _db_client.execute(
-        "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
-    )
+_db_client = None
+_db_mode = "sqlite"
 
-    def db_get(key):
-        rs = _db_client.execute("SELECT value FROM kv WHERE key=?", [key])
-        return json.loads(rs.rows[0][0]) if rs.rows else None
-
-    def db_set(key, value):
-        _db_client.execute(
-            "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
-            [key, json.dumps(value, ensure_ascii=False)]
+def _init_turso():
+    global _db_client, _db_mode
+    if _db_client is not None:
+        return True
+    if not TURSO_URL:
+        return False
+    try:
+        import libsql_client
+        _db_client = libsql_client.create_client_sync(
+            url=TURSO_URL,
+            auth_token=TURSO_TOKEN
         )
+        _db_client.execute(
+            "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+        )
+        _db_mode = "turso"
+        print("[DB] Connected to Turso Cloud")
+        return True
+    except Exception as e:
+        print(f"[DB] Turso connection failed: {e}, falling back to SQLite")
+        return False
 
-    def db_delete(key):
-        _db_client.execute("DELETE FROM kv WHERE key=?", [key])
-
-    print("[DB] Connected to Turso Cloud")
-else:
+def _init_sqlite():
     import sqlite3
-    DB_PATH = os.path.join(BASE_DIR, "roomtis.db")
-
-    def get_db():
-        db = sqlite3.connect(DB_PATH)
-        db.execute("PRAGMA journal_mode=WAL")
-        return db
-
-    db = get_db()
+    db_path = os.path.join(BASE_DIR, "roomtis.db")
+    db = sqlite3.connect(db_path)
     db.execute("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
     db.commit()
     db.close()
+    print("[DB] Using local SQLite:", db_path)
 
-    def db_get(key):
-        db = get_db()
+# Try Turso, fall back to SQLite
+if not _init_turso():
+    _init_sqlite()
+
+def db_get(key):
+    if _db_mode == "turso" and _db_client:
+        rs = _db_client.execute("SELECT value FROM kv WHERE key=?", [key])
+        return json.loads(rs.rows[0][0]) if rs.rows else None
+    else:
+        import sqlite3
+        db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
         row = db.execute("SELECT value FROM kv WHERE key=?", (key,)).fetchone()
         db.close()
         return json.loads(row[0]) if row else None
 
-    def db_set(key, value):
-        db = get_db()
+def db_set(key, value):
+    if _db_mode == "turso" and _db_client:
+        _db_client.execute(
+            "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+            [key, json.dumps(value, ensure_ascii=False)]
+        )
+    else:
+        import sqlite3
+        db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
         db.execute("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
                    (key, json.dumps(value, ensure_ascii=False)))
         db.commit()
         db.close()
 
-    def db_delete(key):
-        db = get_db()
+def db_delete(key):
+    if _db_mode == "turso" and _db_client:
+        _db_client.execute("DELETE FROM kv WHERE key=?", [key])
+    else:
+        import sqlite3
+        db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
         db.execute("DELETE FROM kv WHERE key=?", (key,))
         db.commit()
         db.close()
-
-    print("[DB] Using local SQLite:", DB_PATH)
 
 # ── Teacher Map ───────────────────────────────
 def load_teacher_map():
