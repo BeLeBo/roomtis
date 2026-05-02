@@ -194,11 +194,11 @@ body {
 .block-group { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
 
 .block-divider {
-  display: grid;
-  grid-template-columns: 90px 1fr;
+  display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 6px;
   margin-bottom: 2px;
+  margin-top: 4px;
 }
 
 .block-name {
@@ -207,12 +207,10 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 0 0.4rem 0 0;
-  text-align: right;
-  border-right: 2px solid var(--border);
+  white-space: nowrap;
 }
 
-.block-line { height: 1px; background: var(--border); }
+.block-line { height: 1px; background: var(--border); flex: 1; }
 
 .day-row {
   display: grid;
