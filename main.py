@@ -24,26 +24,43 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
-_db_client = None
 _db_mode = "sqlite"
 
+def _turso_http_url():
+    """Convert libsql:// URL to https:// for HTTP API."""
+    url = TURSO_URL
+    if url.startswith("libsql://"):
+        url = "https://" + url[len("libsql://"):]
+    if not url.endswith("/"):
+        url = url.rstrip("/")
+    return url
+
+def _turso_execute(sql, args=None):
+    """Execute SQL via Turso HTTP API (v2 pipeline)."""
+    url = _turso_http_url() + "/v2/pipeline"
+    stmts = [{"type": "execute", "stmt": {"sql": sql}}]
+    if args:
+        stmts[0]["stmt"]["args"] = [{"type": "text", "value": str(a)} for a in args]
+    stmts.append({"type": "close"})
+    r = requests.post(url, json={"requests": stmts}, headers={
+        "Authorization": f"Bearer {TURSO_TOKEN}",
+        "Content-Type": "application/json"
+    }, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    result = data.get("results", [{}])[0]
+    if result.get("type") == "error":
+        raise Exception(result["error"].get("message", str(result)))
+    return result.get("response", {}).get("result", {})
+
 def _init_turso():
-    global _db_client, _db_mode
-    if _db_client is not None:
-        return True
-    if not TURSO_URL:
+    global _db_mode
+    if not TURSO_URL or not TURSO_TOKEN:
         return False
     try:
-        import libsql_client
-        _db_client = libsql_client.create_client_sync(
-            url=TURSO_URL,
-            auth_token=TURSO_TOKEN
-        )
-        _db_client.execute(
-            "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
-        )
+        _turso_execute("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         _db_mode = "turso"
-        print("[DB] Connected to Turso Cloud")
+        print("[DB] Connected to Turso Cloud via HTTP")
         return True
     except Exception as e:
         print(f"[DB] Turso connection failed: {e}, falling back to SQLite")
@@ -63,9 +80,16 @@ if not _init_turso():
     _init_sqlite()
 
 def db_get(key):
-    if _db_mode == "turso" and _db_client:
-        rs = _db_client.execute("SELECT value FROM kv WHERE key=?", [key])
-        return json.loads(rs.rows[0][0]) if rs.rows else None
+    if _db_mode == "turso":
+        try:
+            result = _turso_execute("SELECT value FROM kv WHERE key=?", [key])
+            rows = result.get("rows", [])
+            if rows:
+                return json.loads(rows[0][0].get("value", "null"))
+            return None
+        except Exception as e:
+            print(f"[DB ERROR] turso db_get({key}): {e}")
+            return None
     else:
         import sqlite3
         try:
@@ -78,11 +102,12 @@ def db_get(key):
             return None
 
 def db_set(key, value):
-    if _db_mode == "turso" and _db_client:
-        _db_client.execute(
-            "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
-            [key, json.dumps(value, ensure_ascii=False)]
-        )
+    if _db_mode == "turso":
+        try:
+            _turso_execute("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+                          [key, json.dumps(value, ensure_ascii=False)])
+        except Exception as e:
+            print(f"[DB ERROR] turso db_set({key}): {e}")
     else:
         import sqlite3
         try:
@@ -95,8 +120,11 @@ def db_set(key, value):
             print(f"[DB ERROR] db_set({key}): {e}")
 
 def db_delete(key):
-    if _db_mode == "turso" and _db_client:
-        _db_client.execute("DELETE FROM kv WHERE key=?", [key])
+    if _db_mode == "turso":
+        try:
+            _turso_execute("DELETE FROM kv WHERE key=?", [key])
+        except Exception as e:
+            print(f"[DB ERROR] turso db_delete({key}): {e}")
     else:
         import sqlite3
         try:
@@ -153,20 +181,16 @@ def icon_192():
 @app.route("/api/dbstatus")
 def dbstatus():
     try:
-        # Test write
         db_set("_test", {"t": "ok"})
-        # Test read
         val = db_get("_test")
-        # Count keys
-        if _db_mode == "turso" and _db_client:
-            rs = _db_client.execute("SELECT key FROM kv")
-            keys = [r[0] for r in rs.rows]
+        if _db_mode == "turso":
+            result = _turso_execute("SELECT key FROM kv")
+            keys = [r[0].get("value","") for r in result.get("rows", [])]
         else:
             import sqlite3
             db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
             keys = [r[0] for r in db.execute("SELECT key FROM kv").fetchall()]
             db.close()
-        # Clean up test
         db_delete("_test")
         return jsonify({"ok": True, "mode": _db_mode, "test_read": val, "all_keys": keys})
     except Exception as e:
