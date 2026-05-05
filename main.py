@@ -159,18 +159,19 @@ def dbstatus():
         val = db_get("_test")
         # Count keys
         if _db_mode == "turso" and _db_client:
-            rs = _db_client.execute("SELECT COUNT(*) FROM kv")
-            count = rs.rows[0][0] if rs.rows else 0
+            rs = _db_client.execute("SELECT key FROM kv")
+            keys = [r[0] for r in rs.rows]
         else:
             import sqlite3
             db = sqlite3.connect(os.path.join(BASE_DIR, "roomtis.db"))
-            count = db.execute("SELECT COUNT(*) FROM kv").fetchone()[0]
+            keys = [r[0] for r in db.execute("SELECT key FROM kv").fetchall()]
             db.close()
         # Clean up test
         db_delete("_test")
-        return jsonify({"ok": True, "mode": _db_mode, "url": TURSO_URL[:30] + "..." if TURSO_URL else "none", "test_read": val, "total_keys": count})
+        return jsonify({"ok": True, "mode": _db_mode, "test_read": val, "all_keys": keys})
     except Exception as e:
-        return jsonify({"ok": False, "mode": _db_mode, "error": str(e)})
+        import traceback
+        return jsonify({"ok": False, "mode": _db_mode, "error": str(e), "traceback": traceback.format_exc()})
 
 @app.route("/api/freie-raeume")
 def freie_raeume():
@@ -665,6 +666,7 @@ def faecher_load():
         return jsonify({"ok": False, "error": "no uid"}), 400
     try:
         saved = db_get(f"faecher:{user_id}")
+        print(f"[FAECHER LOAD] uid={user_id}, klasse={klasse}, found={saved is not None}, saved_klasse={saved.get('klasse') if saved else 'N/A'}, num_faecher={len(saved.get('faecher',{})) if saved else 0}")
         if saved and saved.get("klasse") == klasse:
             return jsonify({"ok": True, "faecher": saved.get("faecher", {}), "klasse": klasse})
     except Exception as e:
@@ -679,6 +681,7 @@ def faecher_save():
     faecher = data.get("faecher", {})
     if not user_id or not re.match(r'^[a-zA-Z0-9-]{8,64}$', user_id):
         return jsonify({"ok": False, "error": "invalid uid"}), 400
+    print(f"[FAECHER SAVE] uid={user_id}, klasse={klasse}, num_faecher={len(faecher)}")
     db_set(f"faecher:{user_id}", {"klasse": klasse, "faecher": faecher})
     return jsonify({"ok": True})
 
