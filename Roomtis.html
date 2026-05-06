@@ -2324,7 +2324,6 @@ async function loadOberstufenplan(klasse) {
   meineFaecher = {};
   // Load saved courses for this specific class
   await loadFaecherFromServer();
-  await loadFaecherFromServer();
 
   var jg = klasse.replace(/[a-z]/g, '');
   planMonday = getMondayOfCurrentWeek();
@@ -2958,36 +2957,49 @@ function resolveCalL(entry) {
   var hasL  = /\{L\d+\}/.test(title) || /\{L\d+\}/.test(desc);
   if (!hasL) return { title: title, desc: desc, resolved: true, relevant: true };
 
-  // Not in Oberstufe or no data loaded → show raw placeholder
-  if (!meineKlasse || !isOberstufe(meineKlasse) || !Object.keys(planStunden).length || !Object.keys(meineFaecher).length) {
+  // Not in Oberstufe or no data loaded → show raw placeholder (still relevant)
+  if (!meineKlasse || !isOberstufe(meineKlasse) || !Object.keys(planStunden).length) {
+    console.log('[resolveCalL] No class/data, showing raw:', title);
+    return { title: title, desc: desc, resolved: false, relevant: true };
+  }
+
+  // No faecher selected yet → show raw placeholder (still relevant)
+  if (!Object.keys(meineFaecher).length) {
+    console.log('[resolveCalL] No faecher selected, showing raw:', title);
     return { title: title, desc: desc, resolved: false, relevant: true };
   }
 
   // Build L-number → user's chosen subject mapping
-  // lsnumber comes as "L11" string from backend, meineFaecher tells us which subject the user chose per slot
-  var lsMap = {}; // { "L11": { name: "MA1", ... }, ... }
+  var lsMap = {};
+  var allLNumbers = {};
   Object.keys(planStunden).forEach(function(slotKey) {
     var slot = planStunden[slotKey];
     var chosenName = getFachForSlot(slotKey);
-    if (!chosenName) return;
     slot.subjects.forEach(function(subj) {
-      if (subj.name === chosenName && subj.lsnumber) {
-        lsMap[subj.lsnumber] = subj;
+      if (subj.lsnumber) {
+        allLNumbers[subj.lsnumber] = true;
+        if (chosenName && subj.name === chosenName) {
+          lsMap[subj.lsnumber] = subj;
+        }
       }
     });
   });
 
+  console.log('[resolveCalL] title:', title, 'lsMap keys:', Object.keys(lsMap), 'allL:', Object.keys(allLNumbers), 'meineFaecher count:', Object.keys(meineFaecher).length);
+
   var relevant = true;
+  var allResolved = true;
 
   function replacer(match) {
-    // match is e.g. "{L11}" → extract "L11"
-    var lKey = match.slice(1, -1); // "L11"
+    var lKey = match.slice(1, -1);
     var subj = lsMap[lKey];
     if (subj) {
       return subj.name;
-    } else {
-      // User has no course for this L-number → entry not relevant
+    } else if (allLNumbers[lKey]) {
       relevant = false;
+      return match;
+    } else {
+      allResolved = false;
       return match;
     }
   }
@@ -2995,7 +3007,8 @@ function resolveCalL(entry) {
   var rTitle = title.replace(/\{L\d+\}/g, replacer);
   var rDesc  = desc.replace(/\{L\d+\}/g, replacer);
 
-  return { title: rTitle, desc: rDesc, resolved: relevant, relevant: relevant };
+  console.log('[resolveCalL] result: relevant=', relevant, 'resolved=', allResolved, 'title=', rTitle);
+  return { title: rTitle, desc: rDesc, resolved: allResolved && relevant, relevant: relevant };
 }
 
 function getCalEntries(dateStr) {
