@@ -192,7 +192,9 @@ def dbstatus():
             keys = [r[0] for r in db.execute("SELECT key FROM kv").fetchall()]
             db.close()
         db_delete("_test")
-        return jsonify({"ok": True, "mode": _db_mode, "test_read": val, "all_keys": keys})
+        # Show L_NUMMERN keys for debugging
+        l_keys = {jg: list(slots.keys())[:5] for jg, slots in L_NUMMERN.items()} if L_NUMMERN else "empty"
+        return jsonify({"ok": True, "mode": _db_mode, "test_read": val, "all_keys": keys, "l_nummern_sample": l_keys})
     except Exception as e:
         import traceback
         return jsonify({"ok": False, "mode": _db_mode, "error": str(e), "traceback": traceback.format_exc()})
