@@ -3013,8 +3013,11 @@ function resolveCalL(entry) {
 
 function getCalEntries(dateStr) {
   var entries = [];
+  console.log('[getCalEntries] dateStr=', dateStr, 'globalCount=', calGlobalEntries.length, 'personalCount=', calPersonalEntries.length, 'filter=', calFilter);
   if (calFilter === 'alle' || calFilter === 'schule') {
-    calGlobalEntries.filter(function(e){ return e.date === dateStr; }).forEach(function(e) {
+    var matching = calGlobalEntries.filter(function(e){ return e.date === dateStr; });
+    console.log('[getCalEntries] global matching:', matching.length, matching.map(function(e){ return e.title; }));
+    matching.forEach(function(e) {
       var resolved = resolveCalL(e);
       // Skip entries that aren't relevant for this user (L-number they don't have)
       if (!resolved.relevant) return;
