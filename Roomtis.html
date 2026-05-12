@@ -527,6 +527,20 @@ body {
 
 <div class="topbar">
   <div class="logo" onclick="switchTab('rooms')" style="cursor:pointer">room<span>tis</span></div>
+  <div id="nextEventBanner" onclick="switchTab('kalender')" style="
+    display:none;
+    cursor:pointer;
+    flex:1;
+    min-width:0;
+    margin:0 0.75rem;
+    padding:0.25rem 0.5rem;
+    background:rgba(255,255,255,0.08);
+    border-radius:6px;
+    border-left:3px solid #4a90d9;
+  ">
+    <div id="nextEventDate" style="font-family:'Syne Mono',monospace;font-size:0.5rem;color:#a09a90;letter-spacing:0.03em"></div>
+    <div id="nextEventTitle" style="font-size:0.75rem;font-weight:800;color:#f5f2eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+  </div>
   <div style="display:flex;align-items:center;gap:0.5rem">
     <!-- Drei-Punkte Menü -->
     <div style="position:relative">
@@ -978,27 +992,6 @@ body {
 </div>
 
 <!-- NEXT EVENT BANNER -->
-<div id="nextEventBanner" onclick="switchTab('kalender')" style="
-  display:none;
-  cursor:pointer;
-  padding:0.5rem 1.5rem;
-  background:var(--ink);
-  border-bottom:1px solid #2a2824;
-  position:sticky;
-  top:52px;
-  z-index:99;
-">
-  <div style="display:flex;align-items:center;gap:0.6rem">
-    <div id="nextEventDot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></div>
-    <div style="min-width:0;flex:1">
-      <div style="display:flex;align-items:baseline;gap:0.4rem">
-        <div id="nextEventDate" style="font-family:'Syne Mono',monospace;font-size:0.65rem;color:#a09a90;white-space:nowrap"></div>
-        <div id="nextEventTitle" style="font-size:0.85rem;font-weight:800;color:var(--bg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-      </div>
-    </div>
-    <div style="font-family:'Syne Mono',monospace;font-size:0.55rem;color:#605a50;flex-shrink:0">→</div>
-  </div>
-</div>
 
 <!-- TAB: FREIE RÄUME -->
 <div id="viewRooms">
@@ -2978,7 +2971,6 @@ function updateNextEvent() {
   var banner = document.getElementById('nextEventBanner');
   var dateEl = document.getElementById('nextEventDate');
   var titleEl = document.getElementById('nextEventTitle');
-  var dotEl = document.getElementById('nextEventDot');
   banner.style.display = 'none';
 
   var today = new Date();
@@ -2990,11 +2982,8 @@ function updateNextEvent() {
   var upcoming = [];
   allEntries.forEach(function(e) {
     if (!e.date || e.date < todayStr) return;
-    // Resolve L-numbers and strictly filter
     var resolved = resolveCalL(e);
-    // Skip if not relevant (L-number for a course the user doesn't have)
     if (!resolved.relevant) return;
-    // Skip if has unresolved L-numbers (means we can't determine relevance)
     if (/\{L\d+\}/.test(resolved.title)) return;
     upcoming.push({ date: e.date, title: resolved.title, color: e.color || '#4a90d9' });
   });
@@ -3018,7 +3007,7 @@ function updateNextEvent() {
 
   dateEl.textContent = dateLabel;
   titleEl.textContent = next.title;
-  dotEl.style.background = next.color;
+  banner.style.borderLeftColor = next.color;
   banner.style.display = '';
 }
 
