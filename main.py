@@ -3,8 +3,22 @@ import requests
 import re
 import os
 import json
+import time as _time
 
 app = Flask(__name__)
+
+CACHE_TTL = 600  # 10 minutes
+
+def cache_get(key):
+    """Get cached data if not expired."""
+    data = db_get(f"cache:{key}")
+    if data and data.get("expires", 0) > _time.time():
+        return data.get("value")
+    return None
+
+def cache_set(key, value, ttl=CACHE_TTL):
+    """Cache data with expiry."""
+    db_set(f"cache:{key}", {"value": value, "expires": _time.time() + ttl})
 
 USERNAME = "schueler"
 PASSWORD = "am27Jan"
@@ -210,7 +224,12 @@ def freie_raeume():
     date_int   = int(request.args.get("date", "20260223"))
     check_time = int(request.args.get("time", "815"))
 
-    # Frische Session für jeden Request
+    # Check cache (shorter TTL for free rooms - 5 min)
+    cache_key = f"freie:{date_int}:{check_time}"
+    cached = cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     sess = requests.Session()
     sess.headers.update({
         "User-Agent": "Mozilla/5.0",
@@ -267,14 +286,16 @@ def freie_raeume():
             key=lambda x: x["name"]
         )
 
-        print(f"[DEBUG] check_time={check_time} date={date_int}")
-        print(f"[DEBUG] belegte_ids={belegte_ids}")
-        print(f"[DEBUG] frei={len(freie)} belegt={len(belegte)}")
-
         rpc("logout")
-        return jsonify({"ok": True, "freie": freie, "belegte": belegte})
+        result = {"ok": True, "freie": freie, "belegte": belegte}
+        cache_set(cache_key, result, ttl=300)  # 5 min cache
+        return jsonify(result)
 
     except Exception as e:
+        stale = db_get(f"cache:{cache_key}")
+        if stale and stale.get("value"):
+            print(f"[CACHE] WebUntis error, returning stale cache for {cache_key}")
+            return jsonify(stale["value"])
         return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.route("/api/debug_tt")
@@ -316,6 +337,12 @@ def stundenplan():
     date_start = int(request.args.get("start", "20260223"))
     date_end   = int(request.args.get("end",   "20260227"))
 
+    # Check cache first
+    cache_key = f"stundenplan:{jahrgang}:{date_start}:{date_end}"
+    cached = cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     sess = requests.Session()
     sess.headers.update({"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"})
 
@@ -338,17 +365,11 @@ def stundenplan():
         subj_map = {s["id"]: s for s in subjects}
         room_map = {r["id"]: r for r in rooms}
 
-        # All classes of this Jahrgang (e.g. 12, 12a, 12b, ...)
         jg_klassen = [k for k in alle_klassen if k["name"] == jahrgang or
                       (k["name"].startswith(jahrgang) and len(k["name"]) == len(jahrgang)+1 and not k["name"][len(jahrgang)].isdigit())]
-        
-        print("DEBUG jg_klassen:", [k["name"] for k in jg_klassen])
 
-        # Collect all stunden from all Jahrgang classes, deduplicated by (date, startTime, subjectId)
         seen = set()
         stunden = []
-
-        # Collect all entries first, then deduplicate preferring non-cancelled
         all_entries = []
         for klasse in jg_klassen:
             tt = rpc("getTimetable", {
@@ -362,14 +383,12 @@ def stundenplan():
                 cancelled = e.get("code") == "cancelled"
                 irregular = e.get("code") == "irregular"
                 l_nr = get_l_nummer(jahrgang, e["date"], e["startTime"])
-                # Detect room changes (orgid present and different)
                 room_changed = False
                 orig_rooms = []
                 for r in e.get("ro", []):
                     if "orgid" in r and r["orgid"] != r["id"]:
                         room_changed = True
                         orig_rooms.append(room_map.get(r["orgid"], {}).get("name", "?"))
-                # Detect teacher changes
                 teacher_changed = False
                 orig_teachers = []
                 for t in e.get("te", []):
@@ -399,7 +418,6 @@ def stundenplan():
                         "lsnumber":  l_nr,
                     })
 
-        # Deduplicate: non-cancelled wins over cancelled for same (date, startTime, subjectId)
         best = {}
         for e in all_entries:
             key = (e["date"], e["startTime"], e["subject"]["id"])
@@ -408,9 +426,16 @@ def stundenplan():
         stunden = list(best.values())
 
         rpc("logout")
-        return jsonify({"ok": True, "stunden": stunden})
+        result = {"ok": True, "stunden": stunden}
+        cache_set(cache_key, result)
+        return jsonify(result)
 
     except Exception as e:
+        # On error, try to return stale cache
+        stale = db_get(f"cache:{cache_key}")
+        if stale and stale.get("value"):
+            print(f"[CACHE] WebUntis error, returning stale cache for {cache_key}")
+            return jsonify(stale["value"])
         return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.route("/api/lehrer_save", methods=["POST"])
@@ -511,6 +536,11 @@ def stundenplan_klasse():
     date_start = int(request.args.get("start", "20260223"))
     date_end   = int(request.args.get("end",   "20260227"))
 
+    cache_key = f"klasse:{klasse}:{date_start}:{date_end}"
+    cached = cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     sess = requests.Session()
     sess.headers.update({"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"})
 
@@ -583,10 +613,14 @@ def stundenplan_klasse():
                 })
 
         rpc("logout")
-        return jsonify({"ok": True, "stunden": stunden})
+        result = {"ok": True, "stunden": stunden}
+        cache_set(f"klasse:{klasse}:{date_start}:{date_end}", result)
+        return jsonify(result)
     except Exception as e:
+        stale = db_get(f"cache:klasse:{klasse}:{date_start}:{date_end}")
+        if stale and stale.get("value"):
+            return jsonify(stale["value"])
         return jsonify({"ok": False, "error": str(e)}), 500
-
 @app.route("/api/raeume")
 def get_raeume():
     sess = requests.Session()
