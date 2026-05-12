@@ -2284,7 +2284,7 @@ async function loadUnterstufeplan(klasse) {
       var key = e.date + '-' + e.startTime;
       if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
       var already = planStunden[key].subjects.find(function(s){ return s.name === e.subject.name; });
-      if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
+      if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null });
     });
 
     // Load saved faecher for Unterstufe (same system as Oberstufe)
@@ -2350,7 +2350,7 @@ async function loadOberstufenplan(klasse) {
         teacherChanged: e.teacherChanged || false,
         origRooms: e.origRooms || [],
         origTeachers: e.origTeachers || [],
-        lsnumber: e.lsnumber || null
+        lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null
       });
     });
 
@@ -2991,26 +2991,11 @@ function resolveCalL(entry) {
   var allResolved = true;
 
   function replacer(match) {
-    var lKey = match.slice(1, -1); // e.g. "L9" or "L09"
-    // Try exact match first, then with/without leading zero
+    var lKey = match.slice(1, -1); // e.g. "L9"
     var subj = lsMap[lKey];
-    if (!subj) {
-      // Try normalizing: L9 -> L09, L09 -> L9
-      var num = lKey.replace(/^L0*/, '');
-      var padded = 'L' + num.padStart(2, '0');
-      var unpadded = 'L' + num;
-      subj = lsMap[padded] || lsMap[unpadded];
-    }
     if (subj) {
       return subj.name;
-    }
-    // Check if L-number exists at all (with normalization)
-    var exists = allLNumbers[lKey];
-    if (!exists) {
-      var num2 = lKey.replace(/^L0*/, '');
-      exists = allLNumbers['L' + num2.padStart(2, '0')] || allLNumbers['L' + num2];
-    }
-    if (exists) {
+    } else if (allLNumbers[lKey]) {
       relevant = false;
       return match;
     } else {
@@ -3534,7 +3519,7 @@ function init() {
             data.stunden.forEach(function(e) {
               var key = e.date + '-' + e.startTime;
               if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
-              planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
+              planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null });
             });
           }
         } catch(e) {}
@@ -3552,7 +3537,7 @@ function init() {
               var key = e.date + '-' + e.startTime;
               if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
               var already = planStunden[key].subjects.find(function(s){ return s.name === e.subject.name; });
-              if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
+              if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null });
             });
             // Load saved selections
             await loadFaecherFromServer();
