@@ -192,9 +192,15 @@ def dbstatus():
             keys = [r[0] for r in db.execute("SELECT key FROM kv").fetchall()]
             db.close()
         db_delete("_test")
-        # Show L_NUMMERN keys for debugging
         l_keys = {jg: list(slots.keys())[:5] for jg, slots in L_NUMMERN.items()} if L_NUMMERN else "empty"
-        return jsonify({"ok": True, "mode": _db_mode, "test_read": val, "all_keys": keys, "l_nummern_sample": l_keys})
+        # Sample: show what get_l_nummer returns for Monday 7:45 in Jahrgang 12
+        sample_l = {
+            "Mo-745": get_l_nummer("12", 20260505, 745),
+            "Mo-935": get_l_nummer("12", 20260505, 935),
+            "Mo-1125": get_l_nummer("12", 20260505, 1125),
+            "Di-745": get_l_nummer("12", 20260506, 745),
+        }
+        return jsonify({"ok": True, "mode": _db_mode, "test_read": val, "all_keys": keys, "l_nummern_sample": l_keys, "sample_l_results": sample_l})
     except Exception as e:
         import traceback
         return jsonify({"ok": False, "mode": _db_mode, "error": str(e), "traceback": traceback.format_exc()})
