@@ -2991,11 +2991,26 @@ function resolveCalL(entry) {
   var allResolved = true;
 
   function replacer(match) {
-    var lKey = match.slice(1, -1);
+    var lKey = match.slice(1, -1); // e.g. "L9" or "L09"
+    // Try exact match first, then with/without leading zero
     var subj = lsMap[lKey];
+    if (!subj) {
+      // Try normalizing: L9 -> L09, L09 -> L9
+      var num = lKey.replace(/^L0*/, '');
+      var padded = 'L' + num.padStart(2, '0');
+      var unpadded = 'L' + num;
+      subj = lsMap[padded] || lsMap[unpadded];
+    }
     if (subj) {
       return subj.name;
-    } else if (allLNumbers[lKey]) {
+    }
+    // Check if L-number exists at all (with normalization)
+    var exists = allLNumbers[lKey];
+    if (!exists) {
+      var num2 = lKey.replace(/^L0*/, '');
+      exists = allLNumbers['L' + num2.padStart(2, '0')] || allLNumbers['L' + num2];
+    }
+    if (exists) {
       relevant = false;
       return match;
     } else {
