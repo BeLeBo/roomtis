@@ -750,7 +750,11 @@ def get_l_nummer(jahrgang, date_int, start_time):
     dt = _dt.date(int(s[:4]), int(s[4:6]), int(s[6:8]))
     wd = WEEKDAY_SHORT[dt.weekday()]  # Mo=0 -> "Mo"
     key = wd + "-" + str(start_time)
-    return jg_map.get(key, None)
+    val = jg_map.get(key, None)
+    # Normalize: L01 -> L1, L09 -> L9, but L10 stays L10
+    if val and len(val) == 3 and val[1] == '0':
+        val = 'L' + val[2]
+    return val
 
 @app.route("/api/l_nummern", methods=["GET", "POST"])
 def l_nummern_api():
