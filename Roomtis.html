@@ -2284,7 +2284,7 @@ async function loadUnterstufeplan(klasse) {
       var key = e.date + '-' + e.startTime;
       if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
       var already = planStunden[key].subjects.find(function(s){ return s.name === e.subject.name; });
-      if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null });
+      if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
     });
 
     // Load saved faecher for Unterstufe (same system as Oberstufe)
@@ -2350,7 +2350,7 @@ async function loadOberstufenplan(klasse) {
         teacherChanged: e.teacherChanged || false,
         origRooms: e.origRooms || [],
         origTeachers: e.origTeachers || [],
-        lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null
+        lsnumber: e.lsnumber || null
       });
     });
 
@@ -3519,7 +3519,7 @@ function init() {
             data.stunden.forEach(function(e) {
               var key = e.date + '-' + e.startTime;
               if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
-              planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null });
+              planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
             });
           }
         } catch(e) {}
@@ -3537,7 +3537,7 @@ function init() {
               var key = e.date + '-' + e.startTime;
               if (!planStunden[key]) planStunden[key] = { startTime: e.startTime, endTime: e.endTime, date: e.date, subjects: [] };
               var already = planStunden[key].subjects.find(function(s){ return s.name === e.subject.name; });
-              if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber ? e.lsnumber.replace(/^L0(\d)$/, 'L$1') : null });
+              if (!already) planStunden[key].subjects.push({ name: e.subject.name, longName: e.subject.longName, room: e.rooms[0] ? e.rooms[0].name : '', teachers: e.teachers || [], cancelled: e.cancelled || false, irregular: e.irregular || false, roomChanged: e.roomChanged || false, teacherChanged: e.teacherChanged || false, origRooms: e.origRooms || [], origTeachers: e.origTeachers || [], lsnumber: e.lsnumber || null });
             });
             // Load saved selections
             await loadFaecherFromServer();
