@@ -528,19 +528,6 @@ body {
 <div class="topbar">
   <div class="logo" onclick="switchTab('rooms')" style="cursor:pointer">room<span>tis</span></div>
   <div style="display:flex;align-items:center;gap:0.5rem">
-    <!-- Nächstes Event -->
-    <div id="nextEventBanner" onclick="switchTab('kalender');toggleMenu()" style="
-      display:none;
-      cursor:pointer;
-      background:rgba(255,255,255,0.1);
-      border-radius:5px;
-      padding:0.15rem 0.5rem;
-      max-width:180px;
-      overflow:hidden;
-    ">
-      <div id="nextEventDate" style="font-family:'Syne Mono',monospace;font-size:0.42rem;color:#a09a90;letter-spacing:0.03em"></div>
-      <div id="nextEventTitle" style="font-size:0.65rem;font-weight:700;color:var(--bg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-    </div>
     <!-- Drei-Punkte Menü -->
     <div style="position:relative">
       <div class="tab-btn" id="menuBtn" onclick="toggleMenu()" title="Menü" style="font-size:1.3rem;letter-spacing:0.05em;padding:0 4px">···</div>
@@ -987,6 +974,29 @@ body {
       padding:0.6rem 1.25rem;font-family:'Syne',sans-serif;font-weight:700;
       font-size:0.88rem;cursor:pointer;transition:opacity 0.15s;width:100%;
     " id="calSaveBtn">Speichern</button>
+  </div>
+</div>
+
+<!-- NEXT EVENT BANNER -->
+<div id="nextEventBanner" onclick="switchTab('kalender')" style="
+  display:none;
+  cursor:pointer;
+  padding:0.5rem 1.5rem;
+  background:var(--ink);
+  border-bottom:1px solid #2a2824;
+  position:sticky;
+  top:52px;
+  z-index:99;
+">
+  <div style="display:flex;align-items:center;gap:0.6rem">
+    <div id="nextEventDot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></div>
+    <div style="min-width:0;flex:1">
+      <div style="display:flex;align-items:baseline;gap:0.4rem">
+        <div id="nextEventDate" style="font-family:'Syne Mono',monospace;font-size:0.65rem;color:#a09a90;white-space:nowrap"></div>
+        <div id="nextEventTitle" style="font-size:0.85rem;font-weight:800;color:var(--bg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      </div>
+    </div>
+    <div style="font-family:'Syne Mono',monospace;font-size:0.55rem;color:#605a50;flex-shrink:0">→</div>
   </div>
 </div>
 
@@ -2968,6 +2978,7 @@ function updateNextEvent() {
   var banner = document.getElementById('nextEventBanner');
   var dateEl = document.getElementById('nextEventDate');
   var titleEl = document.getElementById('nextEventTitle');
+  var dotEl = document.getElementById('nextEventDot');
   banner.style.display = 'none';
 
   var today = new Date();
@@ -2976,16 +2987,18 @@ function updateNextEvent() {
 
   var allEntries = (calGlobalEntries || []).concat(calPersonalEntries || []);
   
-  // Find entries from today onwards, resolve L-numbers, filter relevant
   var upcoming = [];
   allEntries.forEach(function(e) {
     if (!e.date || e.date < todayStr) return;
+    // Resolve L-numbers and strictly filter
     var resolved = resolveCalL(e);
+    // Skip if not relevant (L-number for a course the user doesn't have)
     if (!resolved.relevant) return;
-    upcoming.push({ date: e.date, title: resolved.title, color: e.color || '#4a90d9', type: e.type || 'global' });
+    // Skip if has unresolved L-numbers (means we can't determine relevance)
+    if (/\{L\d+\}/.test(resolved.title)) return;
+    upcoming.push({ date: e.date, title: resolved.title, color: e.color || '#4a90d9' });
   });
 
-  // Sort by date
   upcoming.sort(function(a, b) { return a.date.localeCompare(b.date); });
 
   if (upcoming.length === 0) return;
@@ -2994,21 +3007,19 @@ function updateNextEvent() {
   var parts = next.date.split('-');
   var eventDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
   
-  // Format date label
   var diffDays = Math.round((eventDate - today) / (24*3600*1000));
   var dateLabel = '';
   if (diffDays === 0) dateLabel = 'Heute';
   else if (diffDays === 1) dateLabel = 'Morgen';
   else {
     var WKTAGE = ['So','Mo','Di','Mi','Do','Fr','Sa'];
-    dateLabel = WKTAGE[eventDate.getDay()] + ', ' + parts[2] + '.' + parts[1] + '.';
+    dateLabel = WKTAGE[eventDate.getDay()] + ' ' + parts[2] + '.' + parts[1] + '.';
   }
 
   dateEl.textContent = dateLabel;
   titleEl.textContent = next.title;
-  titleEl.style.color = next.color;
+  dotEl.style.background = next.color;
   banner.style.display = '';
-  banner.style.borderLeft = '2px solid ' + next.color;
 }
 
 // Resolve {L...} placeholders in calendar entry title/desc using the user's planStunden + meineFaecher
